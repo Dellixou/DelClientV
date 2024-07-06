@@ -1,16 +1,16 @@
 [
   {
     "modid": "${modid}",
-    "name": "Xample Mod",
-    "description": "A mod that is used as an example.",
-    "version": "${version}",
+    "name": "DelClient",
+    "description": "QoL for hypixel, use at your own risk!\nThis mod is actually based on some aspects of the game, like Dungeons. (Maybe more in few updates...)",
+    "version": "0.3.2",
     "mcversion": "${mcversion}",
-    "url": "https://github.com/romangraef/Forge1.8.9Template/",
+    "url": "",
     "updateUrl": "",
     "authorList": [
-      "You"
+      "Del"
     ],
-    "credits": "",
+    "credits": "ApparentlyJustin for making all routes",
     "logoFile": "",
     "screenshots": [],
     "dependencies": []
