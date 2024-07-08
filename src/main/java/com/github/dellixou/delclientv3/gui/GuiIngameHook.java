@@ -169,6 +169,9 @@ public class GuiIngameHook {
         return mouseX >= xStart && mouseX <= xEnd && mouseY >= yStart && mouseY <= yEnd;
     }
 
+    /**
+     * Make rainbow.
+     */
     private static int rainbow(int delay){
         float v1 = (float) DelClient.settingsManager.getSettingById("module_list_bg_rainbow_1").getValDouble();
         float v2 = (float) DelClient.settingsManager.getSettingById("module_list_bg_rainbow_2").getValDouble();

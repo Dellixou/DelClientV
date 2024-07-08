@@ -32,7 +32,7 @@ public class ClickGUI extends GuiScreen {
 	// Scale animation
 	private float animationProgress = 0.0f;
 	private static final float ANIMATION_DURATION = 30.0f; // Duration of the animation in ticks
-	private static final float INITIAL_SCALE = 0.4f; // Starting scale
+	private static final float INITIAL_SCALE = 1f; // Starting scale
 	private static final float FINAL_SCALE = 1.0f; // Ending scale
 
 

@@ -1,5 +1,7 @@
 package com.github.dellixou.delclientv3.commands;
 
+import com.github.dellixou.delclientv3.modules.core.ModuleManager;
+import com.github.dellixou.delclientv3.modules.macro.AutoPowder;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommand;
 import net.minecraft.command.ICommandSender;
@@ -28,14 +30,9 @@ public class TestCommand implements ICommand {
 
     @Override
     public void processCommand(ICommandSender sender, String[] args) throws CommandException {
-        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        // Obtenir les noms des familles de polices disponibles
-        String[] fontFamilies = ge.getAvailableFontFamilyNames();
-
-        // Afficher les noms des familles de polices
-        for (String fontName : fontFamilies) {
-            System.out.println(fontName);
-        }
+        AutoPowder autoPowder = (AutoPowder) ModuleManager.getModuleById("auto_powder");
+        autoPowder.detectedChests.clear();
+        autoPowder.pathFinder.realChestsPosition.clear();
     }
 
 
