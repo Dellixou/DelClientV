@@ -33,6 +33,7 @@ public class CommonProxy {
         MinecraftForge.EVENT_BUS.register(new WorldLoadEvent());
         MinecraftForge.EVENT_BUS.register(new LivingUpdate());
         MinecraftForge.EVENT_BUS.register(new KeyInputEvent());
+        guiIngameHook.startTime = System.currentTimeMillis();
         MinecraftForge.EVENT_BUS.register(guiIngameHook);
         MinecraftForge.EVENT_BUS.register(new MousePositionChatEvent());
         MinecraftForge.EVENT_BUS.register(new TickEvent());

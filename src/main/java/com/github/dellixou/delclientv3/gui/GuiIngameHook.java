@@ -1,14 +1,18 @@
 package com.github.dellixou.delclientv3.gui;
 
 import com.github.dellixou.delclientv3.DelClient;
+import com.github.dellixou.delclientv3.gui.clickgui.util.ColorUtil;
 import com.github.dellixou.delclientv3.modules.core.Module;
 import com.github.dellixou.delclientv3.modules.core.ModuleManager;
-import com.github.dellixou.delclientv3.utils.Color.RainbowColor;
+import com.github.dellixou.delclientv3.modules.macro.AutoPowderV2;
+import com.github.dellixou.delclientv3.utils.gui.Blur;
 import com.github.dellixou.delclientv3.utils.gui.DrawingUtils;
 import com.github.dellixou.delclientv3.utils.gui.Wrapper;
 import com.github.dellixou.delclientv3.utils.gui.animations.FadeInAnimation;
-import com.github.dellixou.delclientv3.utils.gui.glyph.GlyphPage;
 import com.github.dellixou.delclientv3.utils.gui.glyph.GlyphPageFontRenderer;
+import com.github.dellixou.delclientv3.utils.gui.misc.BlurHelper;
+import com.github.dellixou.delclientv3.utils.gui.misc.DrawHelper;
+import com.github.dellixou.delclientv3.utils.gui.misc.ShaderHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
@@ -19,13 +23,9 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 import java.awt.*;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.stream.Collectors;
 import java.util.stream.Collectors;
 
-import static org.lwjgl.opengl.GL11.*;
 
 /**
  * Handles in-game rendering hooks, including the module list and mouse interactions.
@@ -34,13 +34,40 @@ public class GuiIngameHook {
 
     // Values
     public boolean enabled = false;
+    private final boolean draggingModules = false;
 
     private final FadeInAnimation hoverAnim = new FadeInAnimation(60, 30);
     private static final GlyphPageFontRenderer glyphPageFontRenderer = GlyphPageFontRenderer.create("Arial", 28, true, true, true);
+    private static final GlyphPageFontRenderer helpFulFont = GlyphPageFontRenderer.create("Arial", 24, true, true, true);
     float scaleText = 0.6f;
+    private float margin = 10;
+    public long startTime;
 
-    private final boolean draggingModules = false;
+    // Animations
+    private static final float MIN_POWER = 0.3f;
+    private static final float MAX_POWER = 0.5f;
+    private static final long ANIMATION_DURATION = 5000;
 
+    /**
+     * Handles the pre-render event for the game overlay.
+     */
+    @SideOnly(Side.CLIENT)
+    @SubscribeEvent
+    public void onRender(RenderGameOverlayEvent.Post event) {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (!mc.gameSettings.showDebugInfo) {
+            if (event.type == RenderGameOverlayEvent.ElementType.EXPERIENCE) {
+                // Render Module
+                if(enabled){renderModulesList();}
+
+                // Render HUD Auto Powder
+                if(ModuleManager.getModuleById("auto_powderv2").isToggled()){
+                    AutoPowderV2 autoPowder = (AutoPowderV2) ModuleManager.getModuleById("auto_powderv2");
+                    renderAutoPowderHUD(mc, autoPowder);
+                }
+            }
+        }
+    }
 
     /**
      * Renders the list of active modules and highlights them when the mouse hovers over.
@@ -138,29 +165,97 @@ public class GuiIngameHook {
     }
 
     /**
-     * Handles the pre-render event for the game overlay.
+     * Renders the HUD for Auto Powder.
      */
-    @SideOnly(Side.CLIENT)
-    @SubscribeEvent
-    public void onRender(RenderGameOverlayEvent.Post event) {
-        Minecraft mc = Minecraft.getMinecraft();
-        if (!mc.gameSettings.showDebugInfo) {
-            if (event.type == RenderGameOverlayEvent.ElementType.EXPERIENCE) {
-                // Render Module
-                if(enabled){renderModulesList();}
+    private void renderAutoPowderHUD(Minecraft mc, AutoPowderV2 autoPowder){
+        // Somes values
+        ScaledResolution sr = new ScaledResolution(mc);
+        int screenWidth = sr.getScaledWidth();
+        int screenHeight = sr.getScaledHeight();
+        float rectX = screenWidth / 2 + margin*2;
+        float rectY = screenHeight / 2 + margin;
+        float rectWidth = 130;
+        float rectHeight = 75;
+
+        float textMargin = 2.0f;
+        float scaledMargin = textMargin / scaleText;
+
+        // Background
+        long currentTime = System.currentTimeMillis();
+        float progress = (float)((currentTime - startTime) % ANIMATION_DURATION) / ANIMATION_DURATION;
+        float oscillation = (float) Math.sin(progress * 2 * Math.PI);
+        float powerRange = MAX_POWER - MIN_POWER;
+        float power = MIN_POWER + (oscillation + 1) * 0.5f * powerRange;
+
+        // Background
+        Color a = new Color(29, 29, 29, 180);
+        Color b = new Color(
+                (int)(ColorUtil.getClickGUIColor().getRed() * power),
+                (int)(ColorUtil.getClickGUIColor().getGreen() * power),
+                (int)(ColorUtil.getClickGUIColor().getBlue() * power),
+                160
+        );
+        //DrawHelper.drawRoundedGradientBlurredRect(rectX, rectY+rectHeight, rectWidth, rectHeight, 4, 7, a, a, b, b);
+        DrawHelper.drawRoundedRectOutline(rectX, rectY+rectHeight, rectWidth, rectHeight, 4, 1.5f, ColorUtil.getClickGUIColor().darker()); // new Color(29, 29, 29, 255)
+
+        Blur.getInstance().renderBlurSection(rectX, rectY, rectWidth, rectHeight, 10);
 
 
-                if(!DelClient.instance.getIsAuthorized()){
-                    GlStateManager.pushMatrix();
-                    GlStateManager.translate(5, 5, 0);
-                    GlStateManager.scale(0.7, 0.7, 0.7);
-                    glyphPageFontRenderer.drawString("§fDel the goat fr fr stfu del the goat!", 0, 0, -1, true);
-                    GlStateManager.popMatrix();
-                }
-            }
-        }
+        GlStateManager.pushMatrix();
+        // Title text
+        GlStateManager.translate(rectX + scaledMargin, rectY + scaledMargin, 0);
+        GlStateManager.scale(scaleText, scaleText, scaleText);
+        helpFulFont.drawString("§lAuto Powder V2 : ", 0, 0, -1, true);
+        GlStateManager.popMatrix();
+        // Is having a chest in target text
+        GlStateManager.pushMatrix();
+        float scale = (textMargin + 6)/scaleText;
+        GlStateManager.translate(rectX + scaledMargin, rectY + scale, 0);
+        GlStateManager.scale(scaleText, scaleText, scaleText);
+        String text = autoPowder.targetChest == null ? "§fTarget : §cNo target" : "§fTarget : §aX: " + autoPowder.targetChest.getX() + " Y: " + autoPowder.targetChest.getY() + " Z: " + autoPowder.targetChest.getZ();
+        helpFulFont.drawString(text, 0, 0, -1, true);
+        GlStateManager.popMatrix();
+        // Is mining text
+        GlStateManager.pushMatrix();
+        scale = (textMargin + 12)/scaleText;
+        GlStateManager.translate(rectX + scaledMargin, rectY + scale, 0);
+        GlStateManager.scale(scaleText, scaleText, scaleText);
+        text = !autoPowder.isMining ? "§fIs mining : §cFalse" : "§fIs mining : §a True";
+        helpFulFont.drawString(text, 0, 0, -1, true);
+        GlStateManager.popMatrix();
+        // Is returning text
+        GlStateManager.pushMatrix();
+        scale = (textMargin + 18)/scaleText;
+        GlStateManager.translate(rectX + scaledMargin, rectY + scale, 0);
+        GlStateManager.scale(scaleText, scaleText, scaleText);
+        text = !autoPowder.isReturning ? "§fIs returning : §cFalse" : "§fIs returning : §a True";
+        helpFulFont.drawString(text, 0, 0, -1, true);
+        GlStateManager.popMatrix();
+        // Is looking text
+        GlStateManager.pushMatrix();
+        scale = (textMargin + 24)/scaleText;
+        GlStateManager.translate(rectX + scaledMargin, rectY + scale, 0);
+        GlStateManager.scale(scaleText, scaleText, scaleText);
+        text = !autoPowder.isLooking ? "§fIs looking : §cFalse" : "§fIs looking : §a True";
+        helpFulFont.drawString(text, 0, 0, -1, true);
+        GlStateManager.popMatrix();
+        // Is clicking text
+        GlStateManager.pushMatrix();
+        scale = (textMargin + 30)/scaleText;
+        GlStateManager.translate(rectX + scaledMargin, rectY + scale, 0);
+        GlStateManager.scale(scaleText, scaleText, scaleText);
+        text = !autoPowder.isClicking ? "§fIs clicking : §cFalse" : "§fIs clicking : §a True";
+        helpFulFont.drawString(text, 0, 0, -1, true);
+        GlStateManager.popMatrix();
+        // Detected chests number
+        GlStateManager.pushMatrix();
+        scale = (textMargin + 36)/scaleText;
+        GlStateManager.translate(rectX + scaledMargin, rectY + scale, 0);
+        GlStateManager.scale(scaleText, scaleText, scaleText);
+        text =  autoPowder.detectedChests.size() > 0 ? "§fDetected chests : §a" + autoPowder.detectedChests.size() : "§fDetected chests : §c0";
+        helpFulFont.drawString(text, 0, 0, -1, true);
+        GlStateManager.popMatrix();
     }
-
 
     /**
      * Checks if the mouse is hovered over a specific area.

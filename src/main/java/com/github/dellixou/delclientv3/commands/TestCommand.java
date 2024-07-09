@@ -1,11 +1,14 @@
 package com.github.dellixou.delclientv3.commands;
 
+import com.github.dellixou.delclientv3.DelClient;
 import com.github.dellixou.delclientv3.modules.core.ModuleManager;
 import com.github.dellixou.delclientv3.modules.macro.AutoPowder;
+import com.github.dellixou.delclientv3.modules.macro.AutoPowderV2;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommand;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.util.BlockPos;
+import net.minecraftforge.common.MinecraftForge;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -30,9 +33,8 @@ public class TestCommand implements ICommand {
 
     @Override
     public void processCommand(ICommandSender sender, String[] args) throws CommandException {
-        AutoPowder autoPowder = (AutoPowder) ModuleManager.getModuleById("auto_powder");
-        autoPowder.detectedChests.clear();
-        autoPowder.pathFinder.realChestsPosition.clear();
+        AutoPowderV2 autoPowderV2 = (AutoPowderV2) ModuleManager.getModuleById("auto_powderv2");
+        autoPowderV2.detectedChests.clear();
     }
 
 
