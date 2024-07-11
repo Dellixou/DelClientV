@@ -47,6 +47,9 @@ public class GuiIngameHook {
     private static final float MIN_POWER = 0.3f;
     private static final float MAX_POWER = 0.5f;
     private static final long ANIMATION_DURATION = 5000;
+    private float hudOpenProgress = 0f;
+    private static final float ANIMATION_SPEED = 0.03f;
+
 
     /**
      * Handles the pre-render event for the game overlay.
@@ -60,11 +63,10 @@ public class GuiIngameHook {
                 // Render Module
                 if(enabled){renderModulesList();}
 
+                Blur.getInstance().renderBlurSectionWithRoundedCorners(10, (mc.displayHeight/2f)+100, 100, 100, 15, 20);
                 // Render HUD Auto Powder
-                if(ModuleManager.getModuleById("auto_powderv2").isToggled()){
-                    AutoPowderV2 autoPowder = (AutoPowderV2) ModuleManager.getModuleById("auto_powderv2");
-                    renderAutoPowderHUD(mc, autoPowder);
-                }
+                //AutoPowderV2 autoPowder = (AutoPowderV2) ModuleManager.getModuleById("auto_powderv2");
+                //renderAutoPowderHUD(mc, autoPowder);
             }
         }
     }
@@ -172,8 +174,8 @@ public class GuiIngameHook {
         ScaledResolution sr = new ScaledResolution(mc);
         int screenWidth = sr.getScaledWidth();
         int screenHeight = sr.getScaledHeight();
-        float rectX = screenWidth / 2 + margin*2;
-        float rectY = screenHeight / 2 + margin;
+        float rectX = 0 + margin*1.3f; // screenWidth / 2 + margin * 2
+        float rectY = screenHeight / 3f + margin;
         float rectWidth = 130;
         float rectHeight = 75;
 
@@ -195,64 +197,69 @@ public class GuiIngameHook {
                 (int)(ColorUtil.getClickGUIColor().getBlue() * power),
                 160
         );
-        //DrawHelper.drawRoundedGradientBlurredRect(rectX, rectY+rectHeight, rectWidth, rectHeight, 4, 7, a, a, b, b);
-        DrawHelper.drawRoundedRectOutline(rectX, rectY+rectHeight, rectWidth, rectHeight, 4, 1.5f, ColorUtil.getClickGUIColor().darker()); // new Color(29, 29, 29, 255)
-
-        Blur.getInstance().renderBlurSection(rectX, rectY, rectWidth, rectHeight, 10);
 
 
+
+        if (autoPowder.isToggled()) {
+            hudOpenProgress = Math.min(1f, hudOpenProgress + ANIMATION_SPEED);
+        } else {
+            hudOpenProgress = Math.max(0f, hudOpenProgress - ANIMATION_SPEED);
+        }
+
+        if (hudOpenProgress == 0f) return;
+
+        float animatedProgress = easeInOutQuart(hudOpenProgress);
+        float animatedRectHeight = rectHeight * animatedProgress;
+
+        // Background with animation
+        //Blur.getInstance().renderBlurSection(rectX+2, rectY+2, rectWidth-4, animatedRectHeight-4, 15);
+        DrawHelper.drawRoundedGradientBlurredRect(rectX, rectY+animatedRectHeight, rectWidth, animatedRectHeight, 4, 7, a, a, b, b);
+
+        DrawHelper.drawRoundedRectOutline(rectX, rectY+animatedRectHeight, rectWidth, animatedRectHeight, 4, 1.5f, ColorUtil.getClickGUIColor().darker());
+
         GlStateManager.pushMatrix();
-        // Title text
-        GlStateManager.translate(rectX + scaledMargin, rectY + scaledMargin, 0);
-        GlStateManager.scale(scaleText, scaleText, scaleText);
-        helpFulFont.drawString("§lAuto Powder V2 : ", 0, 0, -1, true);
+        GlStateManager.translate(rectX, rectY + animatedRectHeight, 0);
+        GlStateManager.scale(1, animatedProgress, 1);
+        GlStateManager.translate(0, -rectHeight, 0);
+
+        // Render text elements
+        renderHUDText(0, 0, scaledMargin, scaleText, autoPowder);
+
         GlStateManager.popMatrix();
-        // Is having a chest in target text
+    }
+
+
+    private void renderHUDText(float rectX, float rectY, float scaledMargin, float scaleText, AutoPowderV2 autoPowder) {
+        float textY = 2;
+        float lineHeight = helpFulFont.getFontHeight() * scaleText + 2; // Ajout d'un espacement supplémentaire
+
+        renderTextLine("§lAuto Powder V2 : ", rectX, textY, scaledMargin, scaleText);
+        textY += lineHeight;
+
+        String targetText = autoPowder.targetChest == null ? "§fTarget : §cNo target" : String.format("§fTarget : §aX: %d Y: %d Z: %d", autoPowder.targetChest.getX(), autoPowder.targetChest.getY(), autoPowder.targetChest.getZ());
+        renderTextLine(targetText, rectX, textY, scaledMargin, scaleText);
+        textY += lineHeight;
+
+        renderTextLine(autoPowder.isMining ? "§fIs mining : §aTrue" : "§fIs mining : §cFalse", rectX, textY, scaledMargin, scaleText);
+        textY += lineHeight;
+
+        renderTextLine(autoPowder.isReturning ? "§fIs returning : §aTrue" : "§fIs returning : §cFalse", rectX, textY, scaledMargin, scaleText);
+        textY += lineHeight;
+
+        renderTextLine(autoPowder.isLooking ? "§fIs looking : §aTrue" : "§fIs looking : §cFalse", rectX, textY, scaledMargin, scaleText);
+        textY += lineHeight;
+
+        renderTextLine(autoPowder.isClicking ? "§fIs clicking : §aTrue" : "§fIs clicking : §cFalse", rectX, textY, scaledMargin, scaleText);
+        textY += lineHeight;
+
+        String chestsText = autoPowder.detectedChests.size() > 0 ? "§fDetected chests : §a" + autoPowder.detectedChests.size() : "§fDetected chests : §c0";
+        renderTextLine(chestsText, rectX, textY, scaledMargin, scaleText);
+    }
+
+    private void renderTextLine(String text, float x, float y, float scaledMargin, float scaleText) {
         GlStateManager.pushMatrix();
-        float scale = (textMargin + 6)/scaleText;
-        GlStateManager.translate(rectX + scaledMargin, rectY + scale, 0);
+        GlStateManager.translate(x + scaledMargin, y, 0);
         GlStateManager.scale(scaleText, scaleText, scaleText);
-        String text = autoPowder.targetChest == null ? "§fTarget : §cNo target" : "§fTarget : §aX: " + autoPowder.targetChest.getX() + " Y: " + autoPowder.targetChest.getY() + " Z: " + autoPowder.targetChest.getZ();
-        helpFulFont.drawString(text, 0, 0, -1, true);
-        GlStateManager.popMatrix();
-        // Is mining text
-        GlStateManager.pushMatrix();
-        scale = (textMargin + 12)/scaleText;
-        GlStateManager.translate(rectX + scaledMargin, rectY + scale, 0);
-        GlStateManager.scale(scaleText, scaleText, scaleText);
-        text = !autoPowder.isMining ? "§fIs mining : §cFalse" : "§fIs mining : §a True";
-        helpFulFont.drawString(text, 0, 0, -1, true);
-        GlStateManager.popMatrix();
-        // Is returning text
-        GlStateManager.pushMatrix();
-        scale = (textMargin + 18)/scaleText;
-        GlStateManager.translate(rectX + scaledMargin, rectY + scale, 0);
-        GlStateManager.scale(scaleText, scaleText, scaleText);
-        text = !autoPowder.isReturning ? "§fIs returning : §cFalse" : "§fIs returning : §a True";
-        helpFulFont.drawString(text, 0, 0, -1, true);
-        GlStateManager.popMatrix();
-        // Is looking text
-        GlStateManager.pushMatrix();
-        scale = (textMargin + 24)/scaleText;
-        GlStateManager.translate(rectX + scaledMargin, rectY + scale, 0);
-        GlStateManager.scale(scaleText, scaleText, scaleText);
-        text = !autoPowder.isLooking ? "§fIs looking : §cFalse" : "§fIs looking : §a True";
-        helpFulFont.drawString(text, 0, 0, -1, true);
-        GlStateManager.popMatrix();
-        // Is clicking text
-        GlStateManager.pushMatrix();
-        scale = (textMargin + 30)/scaleText;
-        GlStateManager.translate(rectX + scaledMargin, rectY + scale, 0);
-        GlStateManager.scale(scaleText, scaleText, scaleText);
-        text = !autoPowder.isClicking ? "§fIs clicking : §cFalse" : "§fIs clicking : §a True";
-        helpFulFont.drawString(text, 0, 0, -1, true);
-        GlStateManager.popMatrix();
-        // Detected chests number
-        GlStateManager.pushMatrix();
-        scale = (textMargin + 36)/scaleText;
-        GlStateManager.translate(rectX + scaledMargin, rectY + scale, 0);
-        GlStateManager.scale(scaleText, scaleText, scaleText);
-        text =  autoPowder.detectedChests.size() > 0 ? "§fDetected chests : §a" + autoPowder.detectedChests.size() : "§fDetected chests : §c0";
         helpFulFont.drawString(text, 0, 0, -1, true);
         GlStateManager.popMatrix();
     }
@@ -274,6 +281,13 @@ public class GuiIngameHook {
         double rainbowstate = Math.ceil((System.currentTimeMillis() + delay) / 20);
         rainbowstate %= 360;
         return Color.getHSBColor((float) (rainbowstate/360), v1/10, v2/10).getRGB();
+    }
+
+    /**
+     * Ease In Out Quart
+     */
+    private static float easeInOutQuart(float x) {
+        return x < 0.5 ? 8 * x * x * x * x : 1 - (float)Math.pow(-2 * x + 2, 4) / 2;
     }
 
 }

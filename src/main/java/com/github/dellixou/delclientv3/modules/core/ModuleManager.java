@@ -4,6 +4,7 @@ import com.github.dellixou.delclientv3.DelClient;
 import com.github.dellixou.delclientv3.modules.floor7.AutoLeaps;
 import com.github.dellixou.delclientv3.modules.floor7.AutoPre4;
 import com.github.dellixou.delclientv3.modules.macro.AutoFish;
+import com.github.dellixou.delclientv3.modules.macro.AutoForaging;
 import com.github.dellixou.delclientv3.modules.macro.AutoPowder;
 import com.github.dellixou.delclientv3.modules.macro.AutoPowderV2;
 import com.github.dellixou.delclientv3.modules.misc.AutoGFS;
@@ -45,8 +46,9 @@ public class ModuleManager {
         newMod(new AutoLeaps());
         // MACRO
         newMod(new AutoFish());
+        newMod(new AutoForaging());
         //newMod(new AutoPowder());
-        newMod(new AutoPowderV2());
+        //newMod(new AutoPowderV2());
         // MISC
         newMod(new AutoGFS());
     }
