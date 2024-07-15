@@ -37,12 +37,16 @@ import java.util.HashMap;
 
 import com.github.dellixou.delclientv3.utils.gui.Wrapper;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.client.renderer.vertex.VertexBuffer;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
 
 public class DrawHelper{
 
@@ -104,6 +108,40 @@ public class DrawHelper{
 
         glDisable(GL_LINE_SMOOTH);
         drawFinish();
+    }
+
+    public static void drawCustomImage(float x, float y, float width, float height, ResourceLocation image) {
+        Minecraft.getMinecraft().getTextureManager().bindTexture(image);
+
+        GlStateManager.enableBlend();
+        GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+        GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
+
+        GlStateManager.pushMatrix();
+
+        // Determine target scale based on hover state
+        float targetScale = 1f;
+
+        // Interpolate scale using partialTicks
+        //float interpolatedScale = currentScale + (targetScale - currentScale) * partialTicks;
+
+        // Translate to the center of the image before rotating and scaling
+        GlStateManager.translate(x + width / 2, y + height / 2, 0);
+        GlStateManager.scale(1, 1, 1);
+        GlStateManager.translate(-(x + width / 2), -(y + height / 2), 0);
+
+        Tessellator tessellator = Tessellator.getInstance();
+        WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+
+        worldrenderer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
+        worldrenderer.pos(x, y + height, 0).tex(0, 1).endVertex();
+        worldrenderer.pos(x + width, y + height, 0).tex(1, 1).endVertex();
+        worldrenderer.pos(x + width, y, 0).tex(1, 0).endVertex();
+        worldrenderer.pos(x, y, 0).tex(0, 0).endVertex();
+        tessellator.draw();
+
+        GlStateManager.popMatrix();
+        GlStateManager.disableBlend();
     }
 
     // progress [1;100]
@@ -527,54 +565,90 @@ public class DrawHelper{
         GlStateManager.disableBlend();
     }
 
-    public static void drawRoundedTexture(ResourceLocation identifier, double x, double y, double width, double height, double radius) {
-        drawRoundedTexture(Utils.getTextureId(identifier), x, y, width, height, radius);
+    public static void drawRoundedTexture(ResourceLocation identifier, double x, double y, double width, double height, double radius, Color color) {
+        drawRoundedTexture(Utils.getTextureId(identifier), x, y, width, height, radius, color);
     }
 
-    public static void drawRoundedTexture(int texId, double x, double y, double width, double height, double radius) {
+    public static void drawRoundedTexture(int texId, double x, double y, double width, double height, double radius, Color color) {
         GlStateManager.enableBlend();
-        GlStateManager.blendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        resetColor();
+        GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+
+        // Définir la couleur
+        float r = color.getRed() / 255f;
+        float g = color.getGreen() / 255f;
+        float b = color.getBlue() / 255f;
+        float a = color.getAlpha() / 255f;
 
         ROUNDED_TEXTURE.load();
-        ROUNDED_TEXTURE.setUniformf("size", (float)width * 2, (float)height * 2);
-        ROUNDED_TEXTURE.setUniformf("round", (float)radius * 2);
+        ROUNDED_TEXTURE.setUniformf("size", (float) width * 2, (float) height * 2);
+        ROUNDED_TEXTURE.setUniformf("round", (float) radius * 2);
+        ROUNDED_TEXTURE.setUniformf("color", r, g, b, a); // Passe la couleur au shader
+
         GlStateManager.bindTexture(texId);
         Shader.draw(x, y - height, width, height);
         GlStateManager.bindTexture(0);
+
         ROUNDED_TEXTURE.unload();
 
+        GlStateManager.color(1, 1, 1, 1); // Réinitialiser la couleur après le dessin
         GlStateManager.disableBlend();
-        GlStateManager.color(1, 1, 1, 1);
+        resetColor();
     }
 
-    public static void drawImage(ResourceLocation resourceLocation, double x, double y, double width, double height, float angle) {
-        Minecraft.getMinecraft().getTextureManager().bindTexture(resourceLocation);
-
-        GlStateManager.enableBlend();
-        GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-        GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
-
+    public static void drawSmoothIcon(ResourceLocation icon, float x, float y, int width, int height, Color color) {
         GlStateManager.pushMatrix();
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+        GlStateManager.enableAlpha();
 
-        // Translate to the center of the image before rotating
-        GlStateManager.translate(x + width / 2, y + height / 2, 0);
-        GlStateManager.rotate(angle, 0, 0, 1);
-        GlStateManager.translate(-(x + width / 2), -(y + height / 2), 0);
+        Minecraft.getMinecraft().getTextureManager().bindTexture(icon);
+
+        // Appliquer la couleur
+        GlStateManager.color(color.getRed() / 255f, color.getGreen() / 255f, color.getBlue() / 255f, color.getAlpha() / 255f);
 
         Tessellator tessellator = Tessellator.getInstance();
         WorldRenderer worldrenderer = tessellator.getWorldRenderer();
-
-        worldrenderer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
-        worldrenderer.pos(x, y + height, 0).tex(0, 1).endVertex();
-        worldrenderer.pos(x + width, y + height, 0).tex(1, 1).endVertex();
-        worldrenderer.pos(x + width, y, 0).tex(1, 0).endVertex();
-        worldrenderer.pos(x, y, 0).tex(0, 0).endVertex();
+        worldrenderer.begin(7, DefaultVertexFormats.POSITION_TEX);
+        worldrenderer.pos(x, y + height, 0.0D).tex(0.0D, 1.0D).endVertex();
+        worldrenderer.pos(x + width, y + height, 0.0D).tex(1.0D, 1.0D).endVertex();
+        worldrenderer.pos(x + width, y, 0.0D).tex(1.0D, 0.0D).endVertex();
+        worldrenderer.pos(x, y, 0.0D).tex(0.0D, 0.0D).endVertex();
         tessellator.draw();
 
-        GlStateManager.popMatrix();
+        // Réinitialiser la couleur
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+
         GlStateManager.disableBlend();
+        GlStateManager.popMatrix();
     }
+
+    public static void drawIcon(ResourceLocation icon, int x, int y, int width, int height) {
+        GlStateManager.pushMatrix();
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+
+        Minecraft.getMinecraft().getTextureManager().bindTexture(icon);
+
+        GlStateManager.enableAlpha();
+        GlStateManager.alphaFunc(516, 0.1F);
+        GlStateManager.enableTexture2D();
+
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+
+        float scaleX = (float)width / 512;
+        float scaleY = (float)height / 512;
+
+        GlStateManager.translate(x, y, 0);
+        GlStateManager.scale(scaleX, scaleY, 1.0F);
+
+        Gui.drawModalRectWithCustomSizedTexture(0, 0, 0, 0, 512, 512, 512, 512);
+
+        GlStateManager.disableBlend();
+        GlStateManager.disableAlpha();
+        GlStateManager.disableTexture2D();
+        GlStateManager.popMatrix();
+    }
+
 
     public static void drawGlow(double x, double y, int width, int height, int glowRadius, Color color) {
         GlStateManager.enableBlend();

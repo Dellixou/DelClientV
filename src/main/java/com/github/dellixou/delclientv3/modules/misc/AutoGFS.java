@@ -11,7 +11,7 @@ import org.lwjgl.input.Keyboard;
 public class AutoGFS extends Module {
 
     /**
-     * Constructor to initialize the AutoFish module.
+     * Constructor to initialize the GFS module.
      */
     public AutoGFS() {
         super("Auto GFS", Keyboard.KEY_0, Category.PLAYER, true, "auto_gfs");

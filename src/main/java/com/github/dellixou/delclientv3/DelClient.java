@@ -6,6 +6,7 @@ import com.github.dellixou.delclientv3.events.chats.ChatServerNameEvent;
 import com.github.dellixou.delclientv3.events.misc.MainMenuEventHandler;
 import com.github.dellixou.delclientv3.gui.clickgui.ClickGUI;
 import com.github.dellixou.delclientv3.gui.clickgui.elements.menu.ElementWriteBox;
+import com.github.dellixou.delclientv3.gui.newgui.NewClickGUI;
 import com.github.dellixou.delclientv3.gui.settings.SettingsManager;
 import com.github.dellixou.delclientv3.modules.core.Module;
 import com.github.dellixou.delclientv3.modules.core.ModuleManager;
@@ -39,6 +40,7 @@ public class DelClient {
     public static SettingsManager settingsManager;
     public static ModuleManager moduleManager;
     public static ClickGUI clickGUI;
+    public static NewClickGUI newClickGUI;
     public static FileManager fileManager;
     public static Module userRoute;
     public static RouteLoader routeLoader;
@@ -68,6 +70,7 @@ public class DelClient {
         settingsManager = new SettingsManager();
         moduleManager = new ModuleManager();
         clickGUI = new ClickGUI();
+        newClickGUI = new NewClickGUI();
         userRoute = moduleManager.userMod();
 
         fileManager = new FileManager();

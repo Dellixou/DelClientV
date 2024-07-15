@@ -8,6 +8,7 @@ import com.github.dellixou.delclientv3.modules.macro.AutoForaging;
 import com.github.dellixou.delclientv3.modules.macro.AutoPowder;
 import com.github.dellixou.delclientv3.modules.macro.AutoPowderV2;
 import com.github.dellixou.delclientv3.modules.misc.AutoGFS;
+import com.github.dellixou.delclientv3.modules.misc.TestingSettings;
 import com.github.dellixou.delclientv3.modules.movements.AutoSprint;
 import com.github.dellixou.delclientv3.modules.movements.AutoWalk;
 import com.github.dellixou.delclientv3.modules.movements.UserRoute;
@@ -51,6 +52,7 @@ public class ModuleManager {
         //newMod(new AutoPowderV2());
         // MISC
         newMod(new AutoGFS());
+        newMod(new TestingSettings());
     }
 
     public static void newMod(Module m){

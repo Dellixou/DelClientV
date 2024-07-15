@@ -65,11 +65,11 @@ public class Utils{
     public static int getTextureId(ResourceLocation identifier) {
         TextureManager textureManager = Minecraft.getMinecraft().getTextureManager();
         Object texture = textureManager.getTexture(identifier);
-        if(texture == null) {
+        if (texture == null) {
             texture = new SimpleTexture(identifier);
-            textureManager.loadTexture(identifier, (SimpleTexture)texture);
+            textureManager.loadTexture(identifier, (SimpleTexture) texture);
         }
-        return ((SimpleTexture)texture).getGlTextureId();
+        return ((SimpleTexture) texture).getGlTextureId();
     }
 
     public static void initStencilReplace() {

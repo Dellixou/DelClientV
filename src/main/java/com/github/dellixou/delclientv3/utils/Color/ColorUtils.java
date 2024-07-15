@@ -2,6 +2,8 @@ package com.github.dellixou.delclientv3.utils.Color;
 
 import org.apache.commons.lang3.Validate;
 
+import java.awt.*;
+
 public class ColorUtils {
 
     /**
@@ -26,6 +28,22 @@ public class ColorUtils {
 
     public static String chat(String string){
         return ColorUtils.translateAlternativeColourCode('&', string);
+    }
+
+    public static Color lerpColor(Color color1, Color color2, float t) {
+        t = Math.max(0, Math.min(1, t)); // Clamp t between 0 and 1
+
+        float r = color1.getRed() + t * (color2.getRed() - color1.getRed());
+        float g = color1.getGreen() + t * (color2.getGreen() - color1.getGreen());
+        float b = color1.getBlue() + t * (color2.getBlue() - color1.getBlue());
+        float a = color1.getAlpha() + t * (color2.getAlpha() - color1.getAlpha());
+
+        return new Color(
+                Math.round(r) / 255f,
+                Math.round(g) / 255f,
+                Math.round(b) / 255f,
+                Math.round(a) / 255f
+        );
     }
 
 }

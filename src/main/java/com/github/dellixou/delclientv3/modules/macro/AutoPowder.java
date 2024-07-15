@@ -46,15 +46,15 @@ public class AutoPowder extends Module {
      * Sets up initial settings for the AutoFish module.
      */
     public void setup(){
-        DelClient.settingsManager.rSetting(new Setting("Chest Range", this, 4, 1, 20, true, "auto_powder_chest_range"));
-        DelClient.settingsManager.rSetting(new Setting("Auto Chest", this, true, "auto_powder_chest"));
-        DelClient.settingsManager.rSetting(new Setting("Block Tolerance", this, 1, 0.7, 2, false, "auto_powder_tolerance"));
-        DelClient.settingsManager.rSetting(new Setting("Sneak Tolerance", this, 3, 1, 10, false, "auto_powder_sneak_tolerance"));
-        DelClient.settingsManager.rSetting(new Setting("Look Duration", this, 250, 10, 1000, true, "auto_powder_look_duration"));
-        DelClient.settingsManager.rSetting(new Setting("Auto Miner", this, true, "auto_powder_miner"));
-        DelClient.settingsManager.rSetting(new Setting("Miner Look X Radius", this, 40, 1, 100, true, "auto_powder_miner_radius_x"));
-        DelClient.settingsManager.rSetting(new Setting("Miner Look Y Radius", this, 18, 1, 100, true, "auto_powder_miner_radius_y"));
-        DelClient.settingsManager.rSetting(new Setting("Miner Look Speed", this, 10, 1, 50, false, "auto_powder_miner_radius_speed"));
+        DelClient.settingsManager.rSetting(new Setting("Chest Range", this, 4, 1, 20, true, "auto_powder_chest_range", "1"));
+        DelClient.settingsManager.rSetting(new Setting("Auto Chest", this, true, "auto_powder_chest", "1"));
+        DelClient.settingsManager.rSetting(new Setting("Block Tolerance", this, 1, 0.7, 2, false, "auto_powder_tolerance", "1"));
+        DelClient.settingsManager.rSetting(new Setting("Sneak Tolerance", this, 3, 1, 10, false, "auto_powder_sneak_tolerance", "1"));
+        DelClient.settingsManager.rSetting(new Setting("Look Duration", this, 250, 10, 1000, true, "auto_powder_look_duration", "1"));
+        DelClient.settingsManager.rSetting(new Setting("Auto Miner", this, true, "auto_powder_miner", "1"));
+        DelClient.settingsManager.rSetting(new Setting("Miner Look X Radius", this, 40, 1, 100, true, "auto_powder_miner_radius_x", "1"));
+        DelClient.settingsManager.rSetting(new Setting("Miner Look Y Radius", this, 18, 1, 100, true, "auto_powder_miner_radius_y", "1"));
+        DelClient.settingsManager.rSetting(new Setting("Miner Look Speed", this, 10, 1, 50, false, "auto_powder_miner_radius_speed", "1"));
     }
 
     /**

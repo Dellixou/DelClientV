@@ -40,8 +40,8 @@ public class AutoFish extends Module {
      * Sets up initial settings for the AutoFish module.
      */
     public void setup(){
-        DelClient.settingsManager.rSetting(new Setting("Anti AFK", this, false, "auto_fish_anti_afk"));
-        DelClient.settingsManager.rSetting(new Setting("Delay", this, 1000, 100, 1000, true, "auto_fish_rod_throw"));
+        DelClient.settingsManager.rSetting(new Setting("Delay", this, 1000, 100, 1000, true, "auto_fish_rod_throw", "global"));
+        DelClient.settingsManager.rSetting(new Setting("Anti AFK", this, false, "auto_fish_anti_afk", "anti_afk"));
     }
 
     /**

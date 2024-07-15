@@ -1,6 +1,7 @@
 package com.github.dellixou.delclientv3.gui.settings;
 
 import com.github.dellixou.delclientv3.modules.core.Module;
+import com.github.dellixou.delclientv3.utils.gui.animations.LinearAnimation;
 
 import java.util.ArrayList;
 
@@ -10,6 +11,7 @@ public class Setting {
 	private String id;
 	private Module parent;
 	private String mode;
+	private String category;
 
 	private String sval;
 	private ArrayList<String> options;
@@ -21,33 +23,52 @@ public class Setting {
 	private double max;
 	private boolean onlyint = false;
 
+	// Check settings
+	private boolean isClicked = false;
+	public float xCircle = 22;
+	public LinearAnimation clickAnimCircle;
+
+	// Slider settings
+	public float currentPercentBar = 0.5f;
+	public float targetPercentBar;
+	public float lerpSpeed = 0.3f; // Vitesse de l'animation
+	public boolean dragging = false;
+
+
+
 	// Constructor for text field setting
-	public Setting(String name, Module parent, String sval, String ids){
+	public Setting(String name, Module parent, String sval, String ids, String category){
 		this.name = name;
 		this.parent = parent;
 		this.sval = sval;
 		this.mode = "Text";
 		this.id = ids;
+		this.category = category;
 	}
 
-	public Setting(String name, Module parent, String sval, ArrayList<String> options, String ids){
+	public Setting(String name, Module parent, String sval, ArrayList<String> options, String ids, String category){
 		this.name = name;
 		this.parent = parent;
 		this.sval = sval;
 		this.options = options;
 		this.mode = "Combo";
 		this.id = ids;
+		this.category = category;
 	}
 
-	public Setting(String name, Module parent, boolean bval, String ids){
+	public Setting(String name, Module parent, boolean bval, String ids, String category){
 		this.name = name;
 		this.parent = parent;
 		this.bval = bval;
 		this.mode = "Check";
 		this.id = ids;
+		this.category = category;
+		this.xCircle = bval ? 14 : 22; // 17 si activé, 25 si désactivé
+		this.isClicked = bval;
+		refreshCheckBox();
 	}
 
-	public Setting(String name, Module parent, double dval, double min, double max, boolean onlyint, String ids){
+	public Setting(String name, Module parent, double dval, double min, double max, boolean onlyint, String ids, String category){
 		this.name = name;
 		this.parent = parent;
 		this.dval = dval;
@@ -56,8 +77,39 @@ public class Setting {
 		this.onlyint = onlyint;
 		this.mode = "Slider";
 		this.id = ids;
+		this.category = category;
 	}
 
+	// CHECK SETTINGS
+	public boolean isClicked() {
+		return isClicked;
+	}
+
+	public void setClicked(boolean clicked) {
+		if (clicked != isClicked) {
+			if (clicked) {
+				clickAnimCircle = new LinearAnimation(xCircle, 14, 150, true);
+			} else {
+				clickAnimCircle = new LinearAnimation(xCircle, 22, 150, true);
+			}
+			isClicked = clicked;
+			bval = clicked;
+		}
+	}
+
+	public void refreshCheckBox(){
+		if (bval) {
+			xCircle = 14;
+			isClicked = true;
+			clickAnimCircle = new LinearAnimation(22, 14, 10, true);
+		} else {
+			xCircle = 22;
+			isClicked = false;
+			clickAnimCircle = new LinearAnimation(14, 22, 10, true);
+		}
+	}
+
+	// OTHERS
 	public String getName(){
 		return name;
 	}
@@ -84,6 +136,10 @@ public class Setting {
 
 	public boolean getValBoolean(){
 		return this.bval;
+	}
+
+	public String getCategory(){
+		return this.category;
 	}
 
 	public void setValBoolean(boolean in){

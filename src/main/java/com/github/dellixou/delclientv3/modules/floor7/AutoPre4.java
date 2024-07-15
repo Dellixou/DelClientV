@@ -26,8 +26,8 @@ public class AutoPre4 extends Module {
      * Sets up initial settings for the AutoPre4 module.
      */
     public void setup(){
-        DelClient.settingsManager.rSetting(new Setting("Smooth", this, false, "auto_pre4_smooth"));
-        DelClient.settingsManager.rSetting(new Setting("Legit Mode", this, false, "auto_pre4_legit"));
+        DelClient.settingsManager.rSetting(new Setting("Smooth", this, false, "auto_pre4_smooth", "mode"));
+        DelClient.settingsManager.rSetting(new Setting("Legit Mode", this, false, "auto_pre4_legit", "mode"));
     }
 
     /**

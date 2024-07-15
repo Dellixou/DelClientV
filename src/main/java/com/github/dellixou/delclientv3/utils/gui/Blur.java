@@ -1,6 +1,5 @@
 package com.github.dellixou.delclientv3.utils.gui;
 
-import com.google.common.annotations.Beta;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
@@ -23,7 +22,7 @@ public class Blur {
 
     private static final Minecraft mc = Minecraft.getMinecraft();
 
-    private final Shader blurShader = new Shader("shaders/gaussian_rounded.frag"); // shader for (screen) blur
+    private final Shader blurShader = new Shader("shaders/gaussian.frag"); // shader for (screen) blur
     private Framebuffer framebuffer = new Framebuffer(1, 1, false); // the framebuffer the blur is rendered to
 
     private FloatBuffer weightBuffer; // buffer that stores weights
@@ -71,18 +70,15 @@ public class Blur {
      * @param radius blur radius
      * @param pid shader program id
      */
-    private void setupUniforms(int horiz, int vert, float radius, int pid, float width, float height, float round) {
+    private void setupUniforms(int horiz, int vert, float radius, int pid) {
         glUniform1i(glGetUniformLocation(pid, "textureIn"), 0);
         glUniform2f(glGetUniformLocation(pid, "texelSize"), 1.0F / (float) mc.displayWidth, 1.0F / (float) mc.displayHeight);
         glUniform2f(glGetUniformLocation(pid, "direction"), horiz, vert);
         glUniform1f(glGetUniformLocation(pid, "radius"), radius);
-        glUniform2f(glGetUniformLocation(pid, "size"), width, height);
-        glUniform1f(glGetUniformLocation(pid, "round"), round);
 
         calculateWeights(radius);
         glUniform1(glGetUniformLocation(pid, "weights"), weightBuffer);
     }
-
 
 
     /**
@@ -114,10 +110,9 @@ public class Blur {
      *
      * @param blurRadius the blur radius
      */
-    public void renderBlurScreen(float blurRadius, float width, float height, float roundRadius) {
-        renderBlurSection(0, 0, mc.displayWidth, mc.displayHeight, blurRadius, width, height, roundRadius);
+    public void renderBlurScreen(float blurRadius) {
+        renderBlurSection(0, 0, mc.displayWidth, mc.displayHeight, blurRadius);
     }
-
 
     /**
      * Renders blur over box
@@ -128,7 +123,7 @@ public class Blur {
      * @param height height of blur box
      * @param blurRadius the blur radius
      */
-    public void renderBlurSection(float x, float y, float width, float height, float blurRadius, float rectWidth, float rectHeight, float roundRadius) {
+    public void renderBlurSection(float x, float y, float width, float height, float blurRadius) {
         GlStateManager.enableBlend();
         GlStateManager.color(1, 1, 1, 1);
         OpenGlHelper.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, 1, 0);
@@ -136,51 +131,24 @@ public class Blur {
         framebuffer = createFrameBuffer(framebuffer, mc.displayWidth, mc.displayHeight);
         framebuffer.framebufferClear();
 
+
         framebuffer.bindFramebuffer(true);
-        blurShader.use(pid -> setupUniforms(1, 0, blurRadius, pid, rectWidth, rectHeight, roundRadius));
+        blurShader.use(pid -> setupUniforms(1, 0, blurRadius, pid));
         glBindTexture(GL_TEXTURE_2D, mc.getFramebuffer().framebufferTexture);
         blurShader.drawQuads();
         framebuffer.unbindFramebuffer();
         blurShader.finish();
 
+
         glEnable(GL_SCISSOR_TEST);
         RenderUtils.scissor(x, y, width, height);
         mc.getFramebuffer().bindFramebuffer(true);
-        blurShader.use(pid -> setupUniforms(0, 1, blurRadius, pid, rectWidth, rectHeight, roundRadius));
+        blurShader.use(pid -> setupUniforms(0, 1, blurRadius, pid));
         glBindTexture(GL_TEXTURE_2D, framebuffer.framebufferTexture);
         blurShader.drawQuads();
         blurShader.finish();
         RenderUtils.endScissor();
 
-        glColor4f(1, 1, 1, 1);
-        GlStateManager.bindTexture(0);
-    }
-
-
-
-    public void renderBlurSectionWithRoundedCorners(float x, float y, float width, float height, float blurRadius, float roundRadius) {
-        GlStateManager.enableBlend();
-        GlStateManager.color(1, 1, 1, 1);
-        OpenGlHelper.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, 1, 0);
-
-        framebuffer = createFrameBuffer(framebuffer, mc.displayWidth, mc.displayHeight);
-        framebuffer.framebufferClear();
-
-        framebuffer.bindFramebuffer(true);
-        blurShader.use(pid -> setupUniforms(1, 0, blurRadius, pid, width, height, roundRadius));
-        glBindTexture(GL_TEXTURE_2D, mc.getFramebuffer().framebufferTexture);
-        blurShader.drawQuads();
-        framebuffer.unbindFramebuffer();
-        blurShader.finish();
-
-        glEnable(GL_SCISSOR_TEST);
-        RenderUtils.scissor(x, y, width, height);
-        mc.getFramebuffer().bindFramebuffer(true);
-        blurShader.use(pid -> setupUniforms(0, 1, blurRadius, pid, width, height, roundRadius));
-        glBindTexture(GL_TEXTURE_2D, framebuffer.framebufferTexture);
-        blurShader.drawQuads();
-        blurShader.finish();
-        RenderUtils.endScissor();
 
         glColor4f(1, 1, 1, 1);
         GlStateManager.bindTexture(0);

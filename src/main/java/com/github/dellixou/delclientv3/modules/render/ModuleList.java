@@ -19,10 +19,10 @@ public class ModuleList extends Module{
 
     @Override
     public void setup(){
-        DelClient.settingsManager.rSetting(new Setting("Text Rainbow", this, false, "module_list_text_rainbow"));
-        DelClient.settingsManager.rSetting(new Setting("Background Rainbow", this, false, "module_list_bg_rainbow"));
-        DelClient.settingsManager.rSetting(new Setting("Rainbow X", this, 8, 1, 10, true, "module_list_bg_rainbow_1"));
-        DelClient.settingsManager.rSetting(new Setting("Rainbow Y", this, 7, 1, 10, true, "module_list_bg_rainbow_2"));
+        DelClient.settingsManager.rSetting(new Setting("Text Rainbow", this, false, "module_list_text_rainbow", "visual"));
+        DelClient.settingsManager.rSetting(new Setting("Background Rainbow", this, false, "module_list_bg_rainbow", "visual"));
+        DelClient.settingsManager.rSetting(new Setting("Rainbow X", this, 8, 1, 10, true, "module_list_bg_rainbow_1", "visual"));
+        DelClient.settingsManager.rSetting(new Setting("Rainbow Y", this, 7, 1, 10, true, "module_list_bg_rainbow_2", "visual"));
     }
 
     public void onEnable(){

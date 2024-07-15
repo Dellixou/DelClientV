@@ -18,7 +18,7 @@ public class FOVChanger extends Module{
 
     @Override
     public void setup(){
-        DelClient.settingsManager.rSetting(new Setting("FOV", this, 130, 1, 179, true, "fov_changer_value"));
+        DelClient.settingsManager.rSetting(new Setting("FOV", this, 130, 1, 179, true, "fov_changer_value", "global"));
     }
 
     public void onUpdate(){

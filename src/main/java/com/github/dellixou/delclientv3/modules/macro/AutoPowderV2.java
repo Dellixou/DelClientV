@@ -64,18 +64,18 @@ public class AutoPowderV2 extends Module {
      * Sets up initial settings for the AutoPowderV2 module.
      */
     public void setup() {
-        DelClient.settingsManager.rSetting(new Setting("Chest Range", this, 3, 1, 4, true, "auto_powderv2_chest_range"));
-        DelClient.settingsManager.rSetting(new Setting("Auto Chest", this, true, "auto_powderv2_chest"));
-        DelClient.settingsManager.rSetting(new Setting("Look Duration", this, 250, 10, 1000, true, "auto_powderv2_look_duration"));
-        DelClient.settingsManager.rSetting(new Setting("Click Delay", this, 250, 10, 1000, true, "auto_powderv2_click_delay"));
-        DelClient.settingsManager.rSetting(new Setting("Auto Miner", this, true, "auto_powderv2_miner"));
-        DelClient.settingsManager.rSetting(new Setting("Debug", this, true, "auto_powderv2_debug"));
-        DelClient.settingsManager.rSetting(new Setting("Pitch Start", this, 0, -90, 90, true, "auto_powderv2_miner_start_pitch"));
-        DelClient.settingsManager.rSetting(new Setting("Miner Look X Radius", this, 40, 1, 179.9, false, "auto_powderv2_miner_radius_x"));
-        DelClient.settingsManager.rSetting(new Setting("Miner Look Y Radius", this, 18, 1, 90, false, "auto_powderv2_miner_radius_y"));
-        DelClient.settingsManager.rSetting(new Setting("Miner Look Speed", this, 10, 1, 500, false, "auto_powderv2_miner_radius_speed"));
-        DelClient.settingsManager.rSetting(new Setting("Miner Min Pitch", this, -10, -90, 90, true, "auto_powderv2_miner_min_pitch"));
-        DelClient.settingsManager.rSetting(new Setting("Miner Max Pitch", this, 10, -90, 90, true, "auto_powderv2_miner_max_pitch"));
+        DelClient.settingsManager.rSetting(new Setting("Chest Range", this, 3, 1, 4, true, "auto_powderv2_chest_range", "1"));
+        DelClient.settingsManager.rSetting(new Setting("Auto Chest", this, true, "auto_powderv2_chest", "1"));
+        DelClient.settingsManager.rSetting(new Setting("Look Duration", this, 250, 10, 1000, true, "auto_powderv2_look_duration", "1"));
+        DelClient.settingsManager.rSetting(new Setting("Click Delay", this, 250, 10, 1000, true, "auto_powderv2_click_delay", "1"));
+        DelClient.settingsManager.rSetting(new Setting("Auto Miner", this, true, "auto_powderv2_miner", "1"));
+        DelClient.settingsManager.rSetting(new Setting("Debug", this, true, "auto_powderv2_debug", "1"));
+        DelClient.settingsManager.rSetting(new Setting("Pitch Start", this, 0, -90, 90, true, "auto_powderv2_miner_start_pitch", "1"));
+        DelClient.settingsManager.rSetting(new Setting("Miner Look X Radius", this, 40, 1, 179.9, false, "auto_powderv2_miner_radius_x", "1"));
+        DelClient.settingsManager.rSetting(new Setting("Miner Look Y Radius", this, 18, 1, 90, false, "auto_powderv2_miner_radius_y", "1"));
+        DelClient.settingsManager.rSetting(new Setting("Miner Look Speed", this, 10, 1, 500, false, "auto_powderv2_miner_radius_speed", "1"));
+        DelClient.settingsManager.rSetting(new Setting("Miner Min Pitch", this, -10, -90, 90, true, "auto_powderv2_miner_min_pitch", "1"));
+        DelClient.settingsManager.rSetting(new Setting("Miner Max Pitch", this, 10, -90, 90, true, "auto_powderv2_miner_max_pitch", "1"));
     }
 
     /**

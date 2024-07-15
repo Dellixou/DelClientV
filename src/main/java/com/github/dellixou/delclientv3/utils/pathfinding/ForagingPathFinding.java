@@ -25,6 +25,7 @@ import net.minecraft.world.pathfinder.WalkNodeProcessor;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
+import org.lwjgl.Sys;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
@@ -44,6 +45,10 @@ public class ForagingPathFinding {
     BlockPos aa = null;
     public BlockOutlineRenderer renderer;
     public boolean isNearTarget = false;
+    public boolean blockNearTemp = false;
+    public boolean far;
+    private int stuckCounter = 0;
+    private float randomPitchIgnore = 0;
 
     public Map<BlockPos, BlockPos> realChestsPosition = new HashMap<>();
 
@@ -52,18 +57,29 @@ public class ForagingPathFinding {
      */
     @SubscribeEvent
     public void onTick(TickEvent.PlayerTickEvent event) {
-        try{
-            DelClient.sendDebug("Is Near target : " + isNearTarget);
-        }catch (Exception ignored ) { }
         if (randomizedWoodLoc != null) {
-            smoothLookAt(mc.thePlayer, randomizedWoodLoc);
+            far = mc.thePlayer.getDistanceSq(woodLoc) >= 30;
+            if (!far) {
+                smoothLookAt(mc.thePlayer, randomizedWoodLoc, false);
+                KeyBinding.setKeyBindState(mc.gameSettings.keyBindAttack.getKeyCode(), true);
+            } else {
+                KeyBinding.setKeyBindState(mc.gameSettings.keyBindAttack.getKeyCode(), false);
+            }
+        } else {
+            KeyBinding.setKeyBindState(mc.gameSettings.keyBindAttack.getKeyCode(), false);
         }
+
         if (path != null && !path.isEmpty()) {
-            if(mc.thePlayer.getPosition().distanceSq(new Vec3i(path.get(path.size()-1).getX(), path.get(path.size()-1).getY(), path.get(path.size()-1).getZ())) <= 6){
+            float deltaX = (float) (mc.thePlayer.posX - path.get(path.size() - 1).getX());
+            float deltaZ = (float) (mc.thePlayer.posZ - path.get(path.size() - 1).getZ());
+            float distance = deltaX * deltaX + deltaZ * deltaZ;
+            if (distance <= 8) {
+                KeyBinding.setKeyBindState(mc.gameSettings.keyBindSneak.getKeyCode(), true);
                 isNearTarget = true;
                 resetPath();
-            }else{
+            } else {
                 isNearTarget = false;
+                KeyBinding.setKeyBindState(mc.gameSettings.keyBindSneak.getKeyCode(), false);
                 moveTowardsNextPoint();
             }
         }
@@ -72,7 +88,7 @@ public class ForagingPathFinding {
     /*
      * Smooth look at the given position.
      */
-    private void smoothLookAt(EntityPlayerSP player, BlockPos target) {
+    private void smoothLookAt(EntityPlayerSP player, BlockPos target, boolean ignorePitch) {
         double diffX = target.getX() + 0.5 - player.posX;
         double diffY = target.getY() + 0.5 - (player.posY + player.getEyeHeight());
         double diffZ = target.getZ() + 0.5 - player.posZ;
@@ -82,7 +98,11 @@ public class ForagingPathFinding {
         float pitch = (float) -(Math.atan2(diffY, dist) * 180.0 / Math.PI);
         float factor = (float) DelClient.settingsManager.getSettingById("auto_fora_look_speed").getValDouble();
         player.rotationYaw = updateRotation(player.rotationYaw, yaw, factor);
-        player.rotationPitch = updateRotation(player.rotationPitch, pitch, factor);
+        if (!ignorePitch || Math.abs(player.rotationPitch - pitch) >= 55) {
+            player.rotationPitch = updateRotation(player.rotationPitch, pitch, factor);
+        }else{
+            player.rotationPitch = updateRotation(player.rotationPitch, randomPitchIgnore, factor);
+        }
     }
 
     /*
@@ -145,7 +165,6 @@ public class ForagingPathFinding {
         return (float) (Math.atan2(diffZ, diffX) * 180.0 / Math.PI) - 90.0f;
     }
 
-
     /**
      * Move player.
      */
@@ -158,36 +177,142 @@ public class ForagingPathFinding {
         EntityPlayerSP player = mc.thePlayer;
         BlockPos nextPoint = path.get(pathIndex);
 
-        float dx = (float) (nextPoint.getX()+0.5-player.posX);
-        float dz = (float) (nextPoint.getZ()+0.5-player.posZ);
+        double distanceToNext = player.getDistanceSq(nextPoint.getX() + 0.5, nextPoint.getY(), nextPoint.getZ() + 0.5);
+        double distanceToTarget = player.getDistanceSq(woodLoc.getX() + 0.5, woodLoc.getY(), woodLoc.getZ() + 0.5);
 
-
-        float targetYaw = calculateYawToTarget(nextPoint);
-        //smoothLookAt(player, nextPoint);
-
-        float angleDifference = MathHelper.wrapAngleTo180_float(targetYaw - player.rotationYaw);
-
-        try{
-            DelClient.sendDebug(String.valueOf(angleDifference));
-            DelClient.sendChatToClient(String.valueOf(path.size()));
-        }catch (Exception ignored) { }
-
-        if(Math.abs(angleDifference) < 45){
-            //KeyBinding.setKeyBindState(mc.gameSettings.keyBindForward.getKeyCode(), true);
+        if (distanceToTarget <= 3) { // Si on est très proche de la cible finale
+            fineTunePosition();
+            return;
         }
 
-        if (player.getDistanceSq(nextPoint.getX() + 0.5, nextPoint.getY(), nextPoint.getZ() + 0.5) < 0.5) {
+        if (distanceToNext > 0.5) {
+            boolean far = distanceToTarget >= 8;
+            boolean blockNear = areBlocksNear();
+
+            if (far || blockNear) {
+                // Comportement existant pour les longues distances
+                float targetYaw = calculateYawToTarget(nextPoint);
+                smoothLookAt(player, nextPoint, true);
+
+                float angleDifference = MathHelper.wrapAngleTo180_float(targetYaw - player.rotationYaw);
+
+                if (Math.abs(angleDifference) < 60) {
+                    KeyBinding.setKeyBindState(mc.gameSettings.keyBindForward.getKeyCode(), true);
+                    KeyBinding.setKeyBindState(mc.gameSettings.keyBindBack.getKeyCode(), false);
+                } else {
+                    KeyBinding.setKeyBindState(mc.gameSettings.keyBindForward.getKeyCode(), false);
+                    KeyBinding.setKeyBindState(mc.gameSettings.keyBindBack.getKeyCode(), true);
+                }
+
+                if (blockNear) {
+                    avoidObstacles();
+                }
+            } else {
+                adjustPosition(nextPoint);
+            }
+        }
+        if(distanceToNext <= 2){
             pathIndex++;
+            if (pathIndex >= path.size()) {
+                resetPath();
+                resetMovementKeys();
+            }
         }
+    }
 
-        // Arrêtez le mouvement si le point final est atteint
-        if (pathIndex >= path.size()) {
-            resetPath();
+    private void fineTunePosition() {
+        double dx = woodLoc.getX() + 0.5 - mc.thePlayer.posX;
+        double dz = woodLoc.getZ() + 0.5 - mc.thePlayer.posZ;
+        double distance = Math.sqrt(dx * dx + dz * dz);
+
+        if (distance > 2) {
+            // Si on est encore un peu loin, on se rapproche doucement
+            adjustPosition(woodLoc);
+        } else {
+            // On est assez proche, on s'arrête et on se tourne vers la cible
+            resetMovementKeys();
+            smoothLookAt(mc.thePlayer, woodLoc, false);
+            isNearTarget = true;
+        }
+    }
+
+    private void adjustPosition(BlockPos target) {
+        final double MOVEMENT_THRESHOLD = 0.1;
+        double dx = target.getX() + 0.5 - mc.thePlayer.posX;
+        double dz = target.getZ() + 0.5 - mc.thePlayer.posZ;
+
+        boolean moveForward = dz < -MOVEMENT_THRESHOLD;
+        boolean moveBack = dz > MOVEMENT_THRESHOLD;
+        boolean moveRight = dx > MOVEMENT_THRESHOLD;
+        boolean moveLeft = dx < -MOVEMENT_THRESHOLD;
+
+        KeyBinding.setKeyBindState(mc.gameSettings.keyBindForward.getKeyCode(), moveForward);
+        KeyBinding.setKeyBindState(mc.gameSettings.keyBindBack.getKeyCode(), moveBack);
+        KeyBinding.setKeyBindState(mc.gameSettings.keyBindRight.getKeyCode(), moveRight);
+        KeyBinding.setKeyBindState(mc.gameSettings.keyBindLeft.getKeyCode(), moveLeft);
+
+        // Si on ne bouge pas, on s'arrête
+        if (!moveForward && !moveBack && !moveRight && !moveLeft) {
             resetMovementKeys();
         }
     }
 
+    // TODO : A*
+    private void avoidObstacles() {
+        boolean obstacleDetected = areBlocksInFront();
 
+        if (obstacleDetected) {
+            KeyBinding.setKeyBindState(mc.gameSettings.keyBindForward.getKeyCode(), false);
+
+            // Randomly choose left or right to avoid the obstacle
+            Random rand = new Random();
+            boolean goLeft = rand.nextBoolean();
+
+            if (goLeft) {
+                KeyBinding.setKeyBindState(mc.gameSettings.keyBindLeft.getKeyCode(), true);
+            } else {
+                KeyBinding.setKeyBindState(mc.gameSettings.keyBindRight.getKeyCode(), true);
+            }
+
+            stuckCounter++;
+            if (stuckCounter > 5) {
+                //KeyBinding.setKeyBindState(mc.gameSettings.keyBindJump.getKeyCode(), true);
+                System.out.print("Stucked!");
+                stuckCounter = 0;
+            }
+        } else {
+            stuckCounter = 0;
+        }
+    }
+
+    private boolean areBlocksNear() {
+        EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
+        World world = Minecraft.getMinecraft().theWorld;
+
+        int playerX = MathHelper.floor_double(player.posX);
+        int playerY = MathHelper.floor_double(player.posY);
+        int playerZ = MathHelper.floor_double(player.posZ);
+
+        for (int x = -1; x <= 1; x++) {
+            for (int z = -1; z <= 1; z++) {
+                for (int y = 0; y <= 1; y++) { // Vérifie au niveau des pieds et de la tête
+                    BlockPos pos = new BlockPos(playerX + x, playerY + y, playerZ + z);
+                    Block block = world.getBlockState(pos).getBlock();
+
+                    if (block.getMaterial().isSolid() && !block.getMaterial().equals(Material.air)) {
+                        blockNearTemp = true;
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Calculate angle.
+     */
     private float calculateAngle(double dx, double dz) {
         return (float) (Math.atan2(dz, dx) * 180.0 / Math.PI);
     }
@@ -232,6 +357,7 @@ public class ForagingPathFinding {
     public void createPath(World world, BlockPos start, BlockPos end) {
         new Thread(() -> {
             int attempts = 5; // Number of attempts to find a path
+            randomPitchIgnore = (float) (1 + Math.random() * (10f - (1)));
             PathEntity pathEntity = null;
             for (int i = 0; i < attempts; i++) {
                 pathEntity = findPath(world, start, end);
@@ -250,11 +376,12 @@ public class ForagingPathFinding {
                 path = optimizePath(rawPath);
                 pathIndex = 1; // Reset path index when a new path is created
                 isNearTarget = false;
+                KeyBinding.setKeyBindState(mc.gameSettings.keyBindSneak.getKeyCode(), false);
+                blockNearTemp = false;
                 updateWoodTarget(end);
             }
         }).start();
     }
-
 
     /**
      * Find a path.
@@ -348,15 +475,15 @@ public class ForagingPathFinding {
     /*
      * Reset current path.
      */
-    public static void resetPath() {
+    public void resetPath() {
         KeyBinding.setKeyBindState(mc.gameSettings.keyBindForward.getKeyCode(), false);
         KeyBinding.setKeyBindState(mc.gameSettings.keyBindBack.getKeyCode(), false);
         KeyBinding.setKeyBindState(mc.gameSettings.keyBindLeft.getKeyCode(), false);
         KeyBinding.setKeyBindState(mc.gameSettings.keyBindRight.getKeyCode(), false);
-        KeyBinding.setKeyBindState(mc.gameSettings.keyBindSneak.getKeyCode(), false);
         if (path != null) {
             path.clear();
         }
+        blockNearTemp = false;
         pathIndex = 1;
     }
 
@@ -446,7 +573,7 @@ public class ForagingPathFinding {
      */
     @SubscribeEvent
     public void onRenderWorldLast(RenderWorldLastEvent event) {
-        if (path != null && !path.isEmpty()) {
+        if (path != null && !path.isEmpty() && path.size() != 0) {
             renderPath3D(event.partialTicks);
         }
     }

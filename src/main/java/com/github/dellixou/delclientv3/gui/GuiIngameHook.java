@@ -4,6 +4,7 @@ import com.github.dellixou.delclientv3.DelClient;
 import com.github.dellixou.delclientv3.gui.clickgui.util.ColorUtil;
 import com.github.dellixou.delclientv3.modules.core.Module;
 import com.github.dellixou.delclientv3.modules.core.ModuleManager;
+import com.github.dellixou.delclientv3.modules.macro.AutoForaging;
 import com.github.dellixou.delclientv3.modules.macro.AutoPowderV2;
 import com.github.dellixou.delclientv3.utils.gui.Blur;
 import com.github.dellixou.delclientv3.utils.gui.DrawingUtils;
@@ -63,10 +64,11 @@ public class GuiIngameHook {
                 // Render Module
                 if(enabled){renderModulesList();}
 
-                Blur.getInstance().renderBlurSectionWithRoundedCorners(10, (mc.displayHeight/2f)+100, 100, 100, 15, 20);
-                // Render HUD Auto Powder
-                //AutoPowderV2 autoPowder = (AutoPowderV2) ModuleManager.getModuleById("auto_powderv2");
-                //renderAutoPowderHUD(mc, autoPowder);
+                // Render HUD Auto Foraging
+                AutoForaging autoForaging = (AutoForaging) ModuleManager.getModuleById("auto_fora");
+                renderAutoForagingHUD(mc, autoForaging);
+
+
             }
         }
     }
@@ -166,6 +168,109 @@ public class GuiIngameHook {
         }
     }
 
+    // ---------------------------------------------- AUTO FORAGING HUD ----------------------------------------------
+
+    /**
+     * Renders the HUD for Auto Powder.
+     */
+    private void renderAutoForagingHUD(Minecraft mc, AutoForaging autoForaging){
+        // Somes values
+        ScaledResolution sr = new ScaledResolution(mc);
+        int screenWidth = sr.getScaledWidth();
+        int screenHeight = sr.getScaledHeight();
+        float rectX = 0 + margin*1.3f; // screenWidth / 2 + margin * 2
+        float rectY = screenHeight / 5f + margin;
+        float rectWidth = 120;
+        float rectHeight = 125;
+
+        float textMargin = 2.0f;
+        float scaledMargin = textMargin / scaleText;
+
+        // Background
+        long currentTime = System.currentTimeMillis();
+        float progress = (float)((currentTime - startTime) % ANIMATION_DURATION) / ANIMATION_DURATION;
+        float oscillation = (float) Math.sin(progress * 2 * Math.PI);
+        float powerRange = MAX_POWER - MIN_POWER;
+        float power = MIN_POWER + (oscillation + 1) * 0.5f * powerRange;
+
+        // Background
+        Color a = new Color(29, 29, 29, 180);
+        Color b = new Color(
+                (int)(ColorUtil.getClickGUIColor().getRed() * power),
+                (int)(ColorUtil.getClickGUIColor().getGreen() * power),
+                (int)(ColorUtil.getClickGUIColor().getBlue() * power),
+                160
+        );
+
+        if (autoForaging.isToggled()) {
+            hudOpenProgress = Math.min(1f, hudOpenProgress + ANIMATION_SPEED);
+        } else {
+            hudOpenProgress = Math.max(0f, hudOpenProgress - ANIMATION_SPEED);
+        }
+
+        if (hudOpenProgress == 0f) return;
+
+        float animatedProgress = easeInOutQuart(hudOpenProgress);
+        float animatedRectHeight = rectHeight * animatedProgress;
+
+        Blur.getInstance().renderBlurSection(rectX, rectY, rectWidth, animatedRectHeight, 15);
+
+        GlStateManager.pushMatrix();
+        GlStateManager.translate(rectX, rectY + animatedRectHeight, 0);
+        GlStateManager.scale(1, animatedProgress, 1);
+        GlStateManager.translate(0, -rectHeight, 0);
+        // Render text elements
+        renderAutoForagingText(0, 0, scaledMargin, scaleText, autoForaging, rectWidth);
+
+        GlStateManager.popMatrix();
+    }
+
+    private void renderAutoForagingText(float rectX, float rectY, float scaledMargin, float scaleText, AutoForaging autoForaging, float rectWidth) {
+        float textY = 2;
+        float lineHeight = helpFulFont.getFontHeight() * scaleText + 2; // Ajout d'un espacement supplémentaire
+
+        renderTextLine("§lAuto Foraging : ", rectX-2, textY, scaledMargin, scaleText+0.1f);
+        textY += lineHeight;
+
+        DrawHelper.drawRoundedRect(rectX+2, textY + 2, rectWidth-4, 1, 1, new Color(59, 59, 59, 157));
+        textY+= 4;
+
+        renderTextLine("§a§lSkills", rectX-2, textY, scaledMargin, scaleText+0.1f);
+        textY += lineHeight;
+
+        renderTextLine("§fForaging Level: 55", rectX, textY, scaledMargin, scaleText);
+        textY += lineHeight;
+
+        renderTextLine("§fProgress: 54.8%", rectX, textY, scaledMargin, scaleText);
+        textY += lineHeight;
+
+        renderTextLine("§fXP/h: 50K/h", rectX, textY, scaledMargin, scaleText);
+        textY += lineHeight;
+
+        renderTextLine("§fProgress to max: 105%", rectX, textY, scaledMargin, scaleText);
+        textY += lineHeight;
+
+        DrawHelper.drawRoundedRect(rectX+2, textY + 2, rectWidth-4, 1, 1, new Color(59, 59, 59, 157));
+        textY+= 4;
+
+        renderTextLine("§a§lProfits", rectX-2, textY, scaledMargin, scaleText+0.1f);
+        textY += lineHeight;
+
+        renderTextLine("§fInventory Value: §c0$", rectX, textY, scaledMargin, scaleText);
+        textY += lineHeight;
+
+        renderTextLine("§fTotal Profit: §c0$", rectX, textY, scaledMargin, scaleText);
+        textY += lineHeight;
+
+        renderTextLine("§fPer Hour: §c0$/h", rectX, textY, scaledMargin, scaleText);
+        textY += lineHeight;
+
+        renderTextLine("§fStack Prize: §a64K$", rectX, textY, scaledMargin, scaleText);
+        textY += lineHeight;
+    }
+
+    // ---------------------------------------------- AUTO POWDER HUD ----------------------------------------------
+
     /**
      * Renders the HUD for Auto Powder.
      */
@@ -198,8 +303,6 @@ public class GuiIngameHook {
                 160
         );
 
-
-
         if (autoPowder.isToggled()) {
             hudOpenProgress = Math.min(1f, hudOpenProgress + ANIMATION_SPEED);
         } else {
@@ -228,7 +331,6 @@ public class GuiIngameHook {
         GlStateManager.popMatrix();
     }
 
-
     private void renderHUDText(float rectX, float rectY, float scaledMargin, float scaleText, AutoPowderV2 autoPowder) {
         float textY = 2;
         float lineHeight = helpFulFont.getFontHeight() * scaleText + 2; // Ajout d'un espacement supplémentaire
@@ -255,6 +357,8 @@ public class GuiIngameHook {
         String chestsText = autoPowder.detectedChests.size() > 0 ? "§fDetected chests : §a" + autoPowder.detectedChests.size() : "§fDetected chests : §c0";
         renderTextLine(chestsText, rectX, textY, scaledMargin, scaleText);
     }
+
+    // ---------------------------------------------- MISC ----------------------------------------------
 
     private void renderTextLine(String text, float x, float y, float scaledMargin, float scaleText) {
         GlStateManager.pushMatrix();

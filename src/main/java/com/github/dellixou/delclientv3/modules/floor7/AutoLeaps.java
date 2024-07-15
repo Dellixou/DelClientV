@@ -42,16 +42,16 @@ public class AutoLeaps extends Module {
         ArrayList<String> leapSetting = new ArrayList<String>();
         leapSetting.add("Class");
         leapSetting.add("Name");
-        DelClient.settingsManager.rSetting(new Setting("Leap Method", this, "Class", leapSetting, "auto_leap_method"));
+        DelClient.settingsManager.rSetting(new Setting("Leap Method", this, "Class", leapSetting, "auto_leap_method", "global"));
         // LEAP VALUES
-        DelClient.settingsManager.rSetting(new Setting("Leap ee2", this, true, "auto_leap_ee2_b"));
-        DelClient.settingsManager.rSetting(new Setting("ee2 Values", this, "Archer/a9.1s", "auto_leap_ee2"));
+        DelClient.settingsManager.rSetting(new Setting("Leap ee2", this, false, "auto_leap_ee2_b", "leap"));
+        DelClient.settingsManager.rSetting(new Setting("ee2 Values", this, "Archer/a9.1s", "auto_leap_ee2", "leap"));
 
-        DelClient.settingsManager.rSetting(new Setting("Leap ee3", this, true, "auto_leap_ee3_b"));
-        DelClient.settingsManager.rSetting(new Setting("ee3 Values", this, "Healer/c", "auto_leap_ee3"));
+        DelClient.settingsManager.rSetting(new Setting("Leap ee3", this, false, "auto_leap_ee3_b", "leap"));
+        DelClient.settingsManager.rSetting(new Setting("ee3 Values", this, "Healer/c", "auto_leap_ee3", "leap"));
 
-        DelClient.settingsManager.rSetting(new Setting("Leap sling", this, true, "auto_leap_sling_b"));
-        DelClient.settingsManager.rSetting(new Setting("Slingshot Values", this, "Mage/c", "auto_leap_sling"));
+        DelClient.settingsManager.rSetting(new Setting("Leap sling", this, false, "auto_leap_sling_b", "leap"));
+        DelClient.settingsManager.rSetting(new Setting("Slingshot Values", this, "Mage/c", "auto_leap_sling", "leap"));
 
     }
 

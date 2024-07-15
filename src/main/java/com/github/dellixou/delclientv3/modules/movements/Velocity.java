@@ -17,7 +17,7 @@ public class Velocity extends Module {
 
     @Override
     public void setup() {
-        DelClient.settingsManager.rSetting(new Setting("Power", this, 10, 1, 30, true, "velocity_power"));
+        DelClient.settingsManager.rSetting(new Setting("Power", this, 10, 1, 30, true, "velocity_power", "global"));
     }
 
     @Override

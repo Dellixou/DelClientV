@@ -198,6 +198,7 @@ public class GlyphPageFontRenderer {
      */
     public int drawString(String text, float x, float y, int color, boolean dropShadow) {
         GlStateManager.enableAlpha();
+        GlStateManager.resetColor();
         this.resetStyles();
         int i;
 

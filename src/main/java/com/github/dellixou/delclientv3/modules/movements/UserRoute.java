@@ -40,17 +40,17 @@ public class UserRoute extends Module{
      */
     @Override
     public void setup(){
-        DelClient.settingsManager.rSetting(new Setting("Tolerance", this, 5, 1, 30, true, "user_route_tol"));
-        DelClient.settingsManager.rSetting(new Setting("Jump T", this, 5, 1, 30, true, "user_route_jump_tol"));
-        DelClient.settingsManager.rSetting(new Setting("Wait T", this, 5, 1, 30, true, "user_route_wait_tol"));
-        DelClient.settingsManager.rSetting(new Setting("Look Delay", this, 100, 5, 1500, true, "user_route_look_delay"));
-        DelClient.settingsManager.rSetting(new Setting("Click Tol", this, 25, 1, 100, true, "user_route_click_tol"));
-        DelClient.settingsManager.rSetting(new Setting("Line Width", this, 10, 10, 100, true, "user_route_width"));
-        DelClient.settingsManager.rSetting(new Setting("Route Toggle", this, 3, 1, 10, true, "user_route_toggle"));
-        DelClient.settingsManager.rSetting(new Setting("Camera T", this, 3, 1, 100, true, "user_route_camera_tick"));
-        DelClient.settingsManager.rSetting(new Setting("Rot Instant", this, false, "user_route_rot_instant"));
-        DelClient.settingsManager.rSetting(new Setting("Render Dist", this, 50, 2, 150, true, "user_route_render_distance"));
-        DelClient.settingsManager.rSetting(new Setting("Through Wall", this, true, "user_route_render_wall"));
+        DelClient.settingsManager.rSetting(new Setting("Tolerance", this, 5, 1, 30, true, "user_route_tol", "tolerance"));
+        DelClient.settingsManager.rSetting(new Setting("Jump T", this, 5, 1, 30, true, "user_route_jump_tol", "tolerance"));
+        DelClient.settingsManager.rSetting(new Setting("Wait T", this, 5, 1, 30, true, "user_route_wait_tol", "tolerance"));
+        DelClient.settingsManager.rSetting(new Setting("Look Delay", this, 100, 5, 1500, true, "user_route_look_delay", "look"));
+        DelClient.settingsManager.rSetting(new Setting("Click Tol", this, 25, 1, 100, true, "user_route_click_tol", "tolerance"));
+        DelClient.settingsManager.rSetting(new Setting("Line Width", this, 10, 10, 100, true, "user_route_width", "visual"));
+        DelClient.settingsManager.rSetting(new Setting("Route Toggle", this, 3, 1, 10, true, "user_route_toggle", "global"));
+        DelClient.settingsManager.rSetting(new Setting("Camera T", this, 3, 1, 100, true, "user_route_camera_tick", "camera"));
+        DelClient.settingsManager.rSetting(new Setting("Rot Instant", this, false, "user_route_rot_instant", "camera"));
+        DelClient.settingsManager.rSetting(new Setting("Render Dist", this, 50, 2, 150, true, "user_route_render_distance", "visual"));
+        DelClient.settingsManager.rSetting(new Setting("Through Wall", this, true, "user_route_render_wall", "visual"));
     }
 
     // Fields for managing routes and movement

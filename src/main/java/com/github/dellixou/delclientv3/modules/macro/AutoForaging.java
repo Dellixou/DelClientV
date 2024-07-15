@@ -40,9 +40,9 @@ public class AutoForaging extends Module {
      * Setup.
      */
     public void setup(){
-        DelClient.settingsManager.rSetting(new Setting("Range", this, 6, 3, 30, true, "auto_fora_wood_range"));
-        DelClient.settingsManager.rSetting(new Setting("Look Speed", this, 5, 1, 30, true, "auto_fora_look_speed"));
-        DelClient.settingsManager.rSetting(new Setting("Debug", this, true, "auto_fora_debug"));
+        DelClient.settingsManager.rSetting(new Setting("Wood Range", this, 6, 3, 30, true, "auto_fora_wood_range", "global"));
+        DelClient.settingsManager.rSetting(new Setting("Look Speed", this, 5, 1, 30, true, "auto_fora_look_speed", "look"));
+        DelClient.settingsManager.rSetting(new Setting("Show Debug", this, false, "auto_fora_debug", "misc"));
     }
 
     /**
@@ -63,6 +63,7 @@ public class AutoForaging extends Module {
         MinecraftForge.EVENT_BUS.unregister(this);
         MinecraftForge.EVENT_BUS.unregister(pathFinder);
         pathFinder.resetPath();
+        targetWood = null;
         super.onDisable();
     }
 
@@ -70,13 +71,15 @@ public class AutoForaging extends Module {
      * On update.
      */
     public void onUpdate(){
-        if(targetWood == null){
-            scanWoods();
-        }else{
-            if(mc.theWorld.getBlockState(targetWood).getBlock() instanceof BlockAir){
-                pathFinder.resetPath();
-                targetWood = null;
-                pathFinder.resetWoodTarget();
+        if(this.isToggled()){
+            if(targetWood == null){
+                scanWoods();
+            }else{
+                if(mc.theWorld.getBlockState(targetWood).getBlock() instanceof BlockAir){
+                    pathFinder.resetPath();
+                    targetWood = null;
+                    pathFinder.resetWoodTarget();
+                }
             }
         }
     }

@@ -5,6 +5,7 @@ import com.github.dellixou.delclientv3.modules.core.ModuleManager;
 import com.github.dellixou.delclientv3.modules.macro.AutoForaging;
 import com.github.dellixou.delclientv3.modules.macro.AutoPowder;
 import com.github.dellixou.delclientv3.modules.macro.AutoPowderV2;
+import net.minecraft.client.Minecraft;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommand;
 import net.minecraft.command.ICommandSender;
@@ -34,8 +35,7 @@ public class TestCommand implements ICommand {
 
     @Override
     public void processCommand(ICommandSender sender, String[] args) throws CommandException {
-        AutoForaging autoForaging = (AutoForaging) ModuleManager.getModuleById("auto_fora");
-        autoForaging.targetWood = null;
+        Minecraft.getMinecraft().displayGuiScreen(DelClient.newClickGUI);
     }
 
 
