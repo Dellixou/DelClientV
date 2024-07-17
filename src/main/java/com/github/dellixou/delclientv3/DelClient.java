@@ -26,6 +26,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import api.java.baritone.api.*;
 
 @Mod(modid = "delclientv", useMetadata=true)
 public class DelClient {
@@ -154,6 +155,10 @@ public class DelClient {
      **/
     public boolean getIsAuthorized(){
         return isAuthorized;
+    }
+
+    public void startBaritone(){
+        baritone.api.BaritoneAPI.getProvider();
     }
 
 }
