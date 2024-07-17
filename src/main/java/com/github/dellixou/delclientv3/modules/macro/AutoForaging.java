@@ -7,19 +7,21 @@ import com.github.dellixou.delclientv3.modules.core.Module;
 import com.github.dellixou.delclientv3.utils.pathfinding.ForagingPathFinding;
 import com.github.dellixou.delclientv3.utils.pathfinding.PlayerPathFinder;
 import com.github.dellixou.delclientv3.utils.renderer.BlockOutlineRenderer;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockAir;
-import net.minecraft.block.BlockChest;
-import net.minecraft.block.BlockLog;
+import com.github.dellixou.delclientv3.utils.renderer.RenderUtils;
+import net.minecraft.block.*;
+import net.minecraft.block.material.Material;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.BlockPos;
+import net.minecraftforge.client.event.DrawBlockHighlightEvent;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 
+import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,14 +37,18 @@ public class AutoForaging extends Module {
     // Fields for managing auto fish.
     public BlockPos targetWood = null;
     public ForagingPathFinding pathFinder = new ForagingPathFinding();
+    private int currentDelay = 0;
 
     /**
      * Setup.
      */
     public void setup(){
         DelClient.settingsManager.rSetting(new Setting("Wood Range", this, 6, 3, 30, true, "auto_fora_wood_range", "global"));
-        DelClient.settingsManager.rSetting(new Setting("Look Speed", this, 5, 1, 30, true, "auto_fora_look_speed", "look"));
+        DelClient.settingsManager.rSetting(new Setting("Delay", this, 10, 1, 20, true, "auto_fora_delay", "global"));
+        DelClient.settingsManager.rSetting(new Setting("Look Speed : Near", this, 5, 1, 30, true, "auto_fora_look_speed", "look"));
+        DelClient.settingsManager.rSetting(new Setting("Look Speed : Far", this, 5, 1, 30, true, "auto_fora_look_speed_far", "look"));
         DelClient.settingsManager.rSetting(new Setting("Show Debug", this, false, "auto_fora_debug", "misc"));
+        DelClient.settingsManager.rSetting(new Setting("Show PathFinding", this, false, "auto_fora_pathfinding", "misc"));
     }
 
     /**
@@ -73,7 +79,12 @@ public class AutoForaging extends Module {
     public void onUpdate(){
         if(this.isToggled()){
             if(targetWood == null){
-                scanWoods();
+                if(currentDelay >= DelClient.settingsManager.getSettingById("auto_fora_delay").getValDouble()){
+                    scanWoods();
+                    currentDelay = 0;
+                }else{
+                    currentDelay += 1;
+                }
             }else{
                 if(mc.theWorld.getBlockState(targetWood).getBlock() instanceof BlockAir){
                     pathFinder.resetPath();
@@ -104,9 +115,15 @@ public class AutoForaging extends Module {
                     if (distanceSq <= radius * radius) {
                         Block block = mc.theWorld.getBlockState(woodPos).getBlock();
                         if (block instanceof BlockLog) {
-                            if (distanceSq < minDistance) {
-                                minDistance = distanceSq;
-                                closestWood = woodPos;
+                            IBlockState state = mc.theWorld.getBlockState(woodPos);
+                            BlockPlanks.EnumType woodType = state.getValue(BlockPlanks.VARIANT);
+                            if (woodType == BlockPlanks.EnumType.ACACIA) {
+                                if (distanceSq < minDistance) {
+                                    if(hasAdjacentAcacia(woodPos)){
+                                        minDistance = distanceSq;
+                                        closestWood = woodPos;
+                                    }
+                                }
                             }
                         }
                     }
@@ -117,10 +134,35 @@ public class AutoForaging extends Module {
         if (closestWood != null) {
             targetWood = closestWood;
             tryingToGoWood(targetWood);
-            DelClient.sendChatToClient("&aDetected a wood block: Coords --> X: " + closestWood.getX() + ", Y: " + closestWood.getY() + ", Z: " + closestWood.getZ());
-            Minecraft.getMinecraft().thePlayer.playSound("random.orb", 1, 1);
+            //DelClient.sendChatToClient("&aDetected a wood block: Coords --> X: " + closestWood.getX() + ", Y: " + closestWood.getY() + ", Z: " + closestWood.getZ());
+            //Minecraft.getMinecraft().thePlayer.playSound("random.orb", 0.1f, 1);
         }
     }
+
+    /**
+     * Adjacent acacia?
+     */
+    private boolean hasAdjacentAcacia(BlockPos pos) {
+        BlockPos[] adjacentPositions = {
+                pos.north(), pos.south(), pos.east(), pos.west(), pos.up(), pos.down()
+        };
+        int acaciaCount = 0;
+        for (BlockPos adjacentPos : adjacentPositions) {
+            Block block = mc.theWorld.getBlockState(adjacentPos).getBlock();
+            if (block instanceof BlockLog) {
+                IBlockState state = mc.theWorld.getBlockState(adjacentPos);
+                BlockPlanks.EnumType woodType = state.getValue(BlockPlanks.VARIANT);
+                if (woodType == BlockPlanks.EnumType.ACACIA) {
+                    acaciaCount++;
+                    if (acaciaCount >= 2) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
 
     /**
      * Path finding to go to the wood.
@@ -158,8 +200,7 @@ public class AutoForaging extends Module {
         //            drawOutlinedBoundingBox(pos, 0.0f, 1.0f, 0.0f, 0.4f);
         //        }
         if(pathFinder.randomizedWoodLoc != null){
-            drawOutlinedBoundingBox(pathFinder.randomizedWoodLoc, 0.0f, 1.0f, 0.0f, 1.0f);
-            //drawOutlinedBoundingBox(targetWood, 0.0f, 1.0f, 0.0f, 0.4f);
+            RenderUtils.drawOutlinedBoundingBox(pathFinder.randomizedWoodLoc, 0.0f, 1.0f, 0.0f, 1.0f);
         }
 
         GL11.glEnable(GL11.GL_TEXTURE_2D);
@@ -168,42 +209,13 @@ public class AutoForaging extends Module {
     }
 
     /**
-     * Draw outlined bouding box.
+     * Event to render wood chosen.
      */
-    private void drawOutlinedBoundingBox(BlockPos pos, float red, float green, float blue, float alpha) {
-        GL11.glColor4f(red, green, blue, alpha);
-        GL11.glBegin(GL11.GL_LINES);
-
-        // Draw bottom face
-        GL11.glVertex3d(pos.getX(), pos.getY(), pos.getZ());
-        GL11.glVertex3d(pos.getX() + 1, pos.getY(), pos.getZ());
-        GL11.glVertex3d(pos.getX() + 1, pos.getY(), pos.getZ());
-        GL11.glVertex3d(pos.getX() + 1, pos.getY(), pos.getZ() + 1);
-        GL11.glVertex3d(pos.getX() + 1, pos.getY(), pos.getZ() + 1);
-        GL11.glVertex3d(pos.getX(), pos.getY(), pos.getZ() + 1);
-        GL11.glVertex3d(pos.getX(), pos.getY(), pos.getZ() + 1);
-        GL11.glVertex3d(pos.getX(), pos.getY(), pos.getZ());
-
-        // Draw top face
-        GL11.glVertex3d(pos.getX(), pos.getY() + 1, pos.getZ());
-        GL11.glVertex3d(pos.getX() + 1, pos.getY() + 1, pos.getZ());
-        GL11.glVertex3d(pos.getX() + 1, pos.getY() + 1, pos.getZ());
-        GL11.glVertex3d(pos.getX() + 1, pos.getY() + 1, pos.getZ() + 1);
-        GL11.glVertex3d(pos.getX() + 1, pos.getY() + 1, pos.getZ() + 1);
-        GL11.glVertex3d(pos.getX(), pos.getY() + 1, pos.getZ() + 1);
-        GL11.glVertex3d(pos.getX(), pos.getY() + 1, pos.getZ() + 1);
-        GL11.glVertex3d(pos.getX(), pos.getY() + 1, pos.getZ());
-
-        // Draw vertical lines
-        GL11.glVertex3d(pos.getX(), pos.getY(), pos.getZ());
-        GL11.glVertex3d(pos.getX(), pos.getY() + 1, pos.getZ());
-        GL11.glVertex3d(pos.getX() + 1, pos.getY(), pos.getZ());
-        GL11.glVertex3d(pos.getX() + 1, pos.getY() + 1, pos.getZ());
-        GL11.glVertex3d(pos.getX() + 1, pos.getY(), pos.getZ() + 1);
-        GL11.glVertex3d(pos.getX() + 1, pos.getY() + 1, pos.getZ() + 1);
-        GL11.glVertex3d(pos.getX(), pos.getY(), pos.getZ() + 1);
-        GL11.glVertex3d(pos.getX(), pos.getY() + 1, pos.getZ() + 1);
-
-        GL11.glEnd();
+    @SubscribeEvent
+    public void onHighlight(DrawBlockHighlightEvent event){
+        if(pathFinder.randomizedWoodLoc != null){
+            RenderUtils.highlightBlock(pathFinder.randomizedWoodLoc, new Color(0, 147, 7), 0.3f, event.partialTicks);
+        }
     }
+
 }

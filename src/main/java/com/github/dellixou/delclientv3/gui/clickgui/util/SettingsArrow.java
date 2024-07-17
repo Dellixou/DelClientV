@@ -59,12 +59,12 @@ public class SettingsArrow {
     private float currentRotation2 = 0.0f;
     private float currentScale = 1.0f;  // Variable to track the current scale
 
-    public void drawComboArrow(float x, float y, float width, float height, ResourceLocation image, boolean isExpanded, float partialTicks) {
+    public void drawComboArrow(float x, float y, float width, float height, ResourceLocation image, boolean isExpanded, float partialTicks, float alpha) {
         Minecraft.getMinecraft().getTextureManager().bindTexture(image);
 
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-        GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
+        GlStateManager.color(1.0f, 1.0f, 1.0f, alpha);
 
         GlStateManager.pushMatrix();
 

@@ -13,6 +13,7 @@ import net.minecraft.util.EnumFacing;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
 
 public class BlockOutlineRenderer {
 
@@ -46,6 +47,7 @@ public class BlockOutlineRenderer {
         GL11.glLineWidth(0.5F);
         GlStateManager.disableTexture2D();
         GlStateManager.depthMask(false);
+        GL11.glEnable(GL13.GL_MULTISAMPLE);
 
         RenderHelper.disableStandardItemLighting();
         Tessellator tessellator = Tessellator.getInstance();
@@ -73,6 +75,7 @@ public class BlockOutlineRenderer {
 
         tessellator.draw();
 
+        GL11.glDisable(GL13.GL_MULTISAMPLE);
         GlStateManager.depthMask(true);
         GlStateManager.enableTexture2D();
         GlStateManager.disableBlend();

@@ -2,16 +2,15 @@ package com.github.dellixou.delclientv3.gui.newgui;
 
 import com.github.dellixou.delclientv3.DelClient;
 import com.github.dellixou.delclientv3.gui.clickgui.util.ColorUtil;
+import com.github.dellixou.delclientv3.gui.clickgui.util.SettingsArrow;
 import com.github.dellixou.delclientv3.gui.settings.Setting;
 import com.github.dellixou.delclientv3.modules.core.Category;
 import com.github.dellixou.delclientv3.modules.core.Module;
 import com.github.dellixou.delclientv3.modules.core.ModuleManager;
-import com.github.dellixou.delclientv3.utils.Color.AnimatedColor;
-import com.github.dellixou.delclientv3.utils.gui.DrawingUtils;
+import com.github.dellixou.delclientv3.utils.Reference;
 import com.github.dellixou.delclientv3.utils.gui.animations.LinearAnimation;
 import com.github.dellixou.delclientv3.utils.gui.glyph.GlyphPageFontRenderer;
 import com.github.dellixou.delclientv3.utils.gui.misc.DrawHelper;
-import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
@@ -22,7 +21,6 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
-import org.lwjgl.util.glu.GLU;
 
 import static org.lwjgl.opengl.GL11.glEnable;
 
@@ -39,11 +37,7 @@ public class NewClickGUI extends GuiScreen {
     public LinearAnimation popAnim;
     public LinearAnimation searchBoxFocus;
     public LinearAnimation settingsPanelAnim;
-
-    // Settings Animations
-
-    // Colors
-    private final AnimatedColor checkBoxColor = new AnimatedColor(new Color(64, 64, 64, 255), ColorUtil.getClickGUIColor(), 200, true);
+    private Map<Category, LinearAnimation> categoryAlphaAnimations;
 
     // Fonts
     private static final GlyphPageFontRenderer font = GlyphPageFontRenderer.create("Arial", 24, true, true, true);
@@ -88,12 +82,14 @@ public class NewClickGUI extends GuiScreen {
     // Modules
     private List<NewModuleButton> buttons = new ArrayList<>();
     public List<NewModuleButton> blackListMod = new ArrayList<>();
+    private NewModuleButton currentOpenModule;
 
     // Settings
     private boolean isBackSettingHover = false;
     public boolean isSettingOpen = false;
     private Color settingBGColor = new Color(47, 47, 56, 255);
     private Setting currentSettingHover;
+    private final SettingsArrow settingsArrow = new SettingsArrow();
 
     // Settings Scroll
     public float settingsScrollAmount = 0f;
@@ -125,7 +121,7 @@ public class NewClickGUI extends GuiScreen {
         popAnim.setIsDrawAnimation(true);
 
         // Initialize modules
-        int rectWidth = 160;
+        int rectWidth = 170; // 160
         int rectHeight = 30;
         int padding = 10;
 
@@ -141,7 +137,6 @@ public class NewClickGUI extends GuiScreen {
                 blackListMod.add(newModuleButton);
             }
             buttons.get(i).checkBlacklist();
-            buttons.get(i).updateSettings();
             i++;
         }
 
@@ -182,6 +177,20 @@ public class NewClickGUI extends GuiScreen {
         isSettingOpen = false;
         isBackSettingHover = false;
 
+        categoryAlphaAnimations = new HashMap<>();
+        for (Category category : Category.values()) {
+            LinearAnimation animation = new LinearAnimation(0, 255, 200, false);
+            if (category == selectedCategory) {
+                animation.AnimationUpdateValue(255, 255, 200, true);
+            }
+            categoryAlphaAnimations.put(category, animation);
+        }
+
+        settingsScrollAmount = 0f;
+        settingsTargetScrollAmount = 0f;
+        settingsCurrentScrollAmount = 0f;
+        currentOpenModule = null;
+
     }
 
     @Override
@@ -191,6 +200,21 @@ public class NewClickGUI extends GuiScreen {
             mc.entityRenderer.stopUseShader();
         }
 
+        for(NewModuleButton button : buttons){
+            if(button.isSettingOpen){
+                button.isClosingSettings = true;
+            }
+        }
+
+        currentCategoryHover = null;
+        currentSettingHover = null;
+        currentOpenModule = null;
+        currentScrollAmount = 0;
+
+        for(Setting set : DelClient.settingsManager.getSettings()){
+            if(set.isSlider()) set.dragging = false;
+        }
+        
         // Save Mods
         DelClient.fileManager.saveMods();
     }
@@ -207,6 +231,8 @@ public class NewClickGUI extends GuiScreen {
      */
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+        // Hover reset
+        currentCategoryHover = null;
         // Animations
         if(searchBoxFocus != null){
             if(isSearchBoxFocused){
@@ -221,7 +247,7 @@ public class NewClickGUI extends GuiScreen {
         ScaledResolution sr = new ScaledResolution(mc);
         int screenWidth = sr.getScaledWidth();
         int screenHeight = sr.getScaledHeight();
-        int buttonXPos = 175;
+        int buttonXPos = 185; //175
         int sideMargin = 10;
 
         // -------------------------------------------- BACKGROUND --------------------------------------------
@@ -279,7 +305,12 @@ public class NewClickGUI extends GuiScreen {
 
         int visibleIndex = 0;
         for (NewModuleButton button : buttons) {
-            if (searchText.isEmpty() || button.mod.getName().toLowerCase().contains(searchText.toLowerCase())) {
+            if(searchText.isEmpty()){
+                if(button.mod.getCategory().equals(selectedCategory)){
+                    button.y = (buttonH + buttonP) * visibleIndex;
+                    visibleIndex++;
+                }
+            }else if(button.mod.getName().toLowerCase().contains(searchText.toLowerCase())){
                 button.y = (buttonH + buttonP) * visibleIndex;
                 visibleIndex++;
             }
@@ -317,12 +348,24 @@ public class NewClickGUI extends GuiScreen {
             categoryHeight+=28;
         }
 
+        GlStateManager.pushMatrix();
+        GlStateManager.translate(rectX + 3, rectY+BGHeight-font.getFontHeight()+6, 0);
+        GlStateManager.scale(0.4f, 0.4f, 0.4f);
+        font.drawString("DelClient-beta"+ Reference.VERSION, 0, 0, new Color(230, 230, 230, 200).getRGB(), false);
+        GlStateManager.popMatrix();
+
         // -------------------------------------------- SETTINGS --------------------------------------------
 
         // TODO: Combo box pour choisir les animations : ease ..
 
         for(NewModuleButton button : buttons){
             if(button.isSettingOpen || button.isClosingSettings){
+                if (currentOpenModule != button) {
+                    settingsScrollAmount = 0f;
+                    settingsTargetScrollAmount = 0f;
+                    settingsCurrentScrollAmount = 0f;
+                    currentOpenModule = button;
+                }
                 button.isSettingOpen = true;
                 // Settings Panel
                 float Sx = rectX + BGWidth - buttonXPos - sideMargin * 2;
@@ -331,7 +374,8 @@ public class NewClickGUI extends GuiScreen {
                 float Sheight = BGHeight;
 
                 float scaleX = button.isClosingSettings ? 1 - settingsPanelAnim.getAnimationValue() : settingsPanelAnim.getAnimationValue();
-                scaleX = easeOutBack(scaleX);
+                //scaleX = easeOutBack(scaleX);
+                scaleX = easeOutQuart(scaleX);
 
                 // Background
                 GlStateManager.pushMatrix();
@@ -361,7 +405,7 @@ public class NewClickGUI extends GuiScreen {
                 if(button.mod.hasSettings()){
                     // Calculate the height for settings
                     float totalSettingsHeight = calculateTotalSettingsHeight(button);
-                    settingsMaxScroll = Math.max(0, totalSettingsHeight - (Sheight - 40)); // 40 pour laisser de l'espace en haut et en bas
+                    settingsMaxScroll = Math.max(0, totalSettingsHeight - (Sheight - 40));
 
                     // Using lerp for mouse wheel
                     settingsCurrentScrollAmount = lerp(settingsCurrentScrollAmount, settingsTargetScrollAmount, settingsLerpSpeedScroll * partialTicks);
@@ -372,7 +416,7 @@ public class NewClickGUI extends GuiScreen {
                     scissorSettings(Sx-50, Sy + 25, Swidth+50, Sheight - 30);
 
                     // Draw settings
-                    drawSettings(button, Sx, Sy + 25 - settingsScrollAmount, Swidth-6, mouseX, mouseY, partialTicks);
+                    drawSettings(button, Sx, Sy + 25 - settingsScrollAmount, Swidth-2, mouseX, mouseY, partialTicks);
 
                     // Disable scissor
                     GL11.glDisable(GL11.GL_SCISSOR_TEST);
@@ -385,6 +429,7 @@ public class NewClickGUI extends GuiScreen {
                         isSettingOpen = false;
                     }
                     button.isClosingSettings = false;
+                    currentOpenModule = null;
                 }
                 GlStateManager.popMatrix();
                 break;
@@ -434,18 +479,19 @@ public class NewClickGUI extends GuiScreen {
         float totalHeight = 0;
         for (String category : DelClient.settingsManager.getAllSettingsCategory(button.mod)) {
             List<Setting> categorySettings = DelClient.settingsManager.getSettingsByModAndCategory(button.mod, category);
+            totalHeight += 20; // Hauteur pour le titre de la catégorie
             for (Setting setting : categorySettings) {
                 if (setting.isCheck()) {
                     totalHeight += 17;
-                }else if(setting.isSlider()){
+                } else if (setting.isSlider()) {
                     totalHeight += 23;
-                }else if(setting.isText()){
+                } else if (setting.isText()) {
                     totalHeight += 23;
-                }else if(setting.isCombo()){
+                } else if (setting.isCombo()) {
                     totalHeight += 23;
                 }
             }
-            totalHeight += 5; // Espace entre les catégories
+            totalHeight += 10; // Espace entre les catégories
         }
         return totalHeight;
     }
@@ -499,18 +545,28 @@ public class NewClickGUI extends GuiScreen {
      * Draw settings.
      */
     private void drawSettings(NewModuleButton button, float x, float y, float width, int mouseX, int mouseY, float partialTicks) {
-        int offset = 0;
+        int offset = 10;
         for (String category : DelClient.settingsManager.getAllSettingsCategory(button.mod)) {
             List<Setting> categorySettings = DelClient.settingsManager.getSettingsByModAndCategory(button.mod, category);
 
             int categoryHeight = 0;
+
             for (Setting cat : categorySettings){
                 if(cat.isCheck()) categoryHeight += 17;
                 if(cat.isSlider()) categoryHeight += 23;
+                if(cat.isCombo()){
+                    categoryHeight += 17;
+                }
             }
 
             // Draw the backgrounds for each categories
             DrawHelper.drawRoundedRect(x + 3, y + offset + categoryHeight, width - 6, categoryHeight, 2, settingBGColor);
+
+            GlStateManager.pushMatrix();
+            GlStateManager.translate(x + 3, y + offset - 9, 0);
+            GlStateManager.scale(0.6, 0.6, 0.6);
+            font.drawString("§l- " + category.substring(0, 1).toUpperCase() + category.substring(1).toLowerCase() + " : ", 0, 0, new Color(234, 234, 234, 220).getRGB(), false);
+            GlStateManager.popMatrix();
 
             // Draw parameters
             for (Setting setting : categorySettings) {
@@ -549,12 +605,14 @@ public class NewClickGUI extends GuiScreen {
                     font.drawString(setting.getName(), 0, 0, new Color(227, 227, 227, 200).getRGB(), false);
                     GlStateManager.popMatrix();
 
+                    String displayval = "" + Math.round(setting.getValDouble() * 100D) / 100D;
+
                     int padding = 8;
-                    float displayValX = (float)(x + width - font.getStringWidth(String.valueOf(setting.getValDouble())) * (0.55) - padding);
+                    float displayValX = (float)(x + width - font.getStringWidth(displayval) * (0.55) - padding);
                     GlStateManager.pushMatrix();
                     GlStateManager.translate(displayValX, y + offset + font.getFontHeight()/2*0.6, 0);
                     GlStateManager.scale(0.55, 0.55, 0.55);
-                    font.drawString(String.valueOf(setting.getValDouble()), 0, 0, new Color(227, 227, 227, 200).getRGB(), false);
+                    font.drawString(displayval, 0, 0, new Color(227, 227, 227, 200).getRGB(), false);
                     GlStateManager.popMatrix();
 
                     // Set value for slider
@@ -588,8 +646,52 @@ public class NewClickGUI extends GuiScreen {
                     // OFFSET
                     offset += 23;
                 }
+
+                if (setting.isCombo()) {
+                    float settingHeight = 17;
+                    float rectHeight = 10;
+                    float arrowSize = 10;
+                    float margin = 4;
+                    float minRectWidth = 30;
+
+                    // Dessiner le nom du setting
+                    GlStateManager.pushMatrix();
+                    GlStateManager.translate(x + 6, y + offset + settingHeight/2 - font.getFontHeight()*0.6f/2, 0);
+                    GlStateManager.scale(0.6, 0.6, 0.6);
+                    font.drawString(setting.getName(), 0, 0, new Color(227, 227, 227, 200).getRGB(), false);
+                    GlStateManager.popMatrix();
+
+                    String currentValue = setting.getValString().substring(0, 1).toUpperCase() + setting.getValString().substring(1);
+
+                    float textWidth = font.getStringWidth(currentValue) * 0.6f;
+                    float rectWidth = Math.max(minRectWidth, textWidth + arrowSize + margin * 3);
+
+                    float rectX = x + width - rectWidth - margin;
+                    float rectY = y + offset + (settingHeight - rectHeight) / 2;
+
+                    boolean hovered = isHoveringSetting(mouseX, mouseY, rectX, rectY, rectWidth, rectHeight, setting);
+                    Color color = hovered ? Color.WHITE : new Color(227, 227, 227, 200);
+                    float alpha = hovered ? 0.7f : 0.4f;
+
+                    DrawHelper.drawRoundedRect(rectX, rectY + rectHeight, rectWidth, rectHeight, 4, new Color(28, 30, 31, 255));
+
+                    float arrowX = rectX + margin - 2.5f;
+                    float arrowY = (rectY + (rectHeight - arrowSize) / 2) - 2;
+                    settingsArrow.drawComboArrow(arrowX, arrowY, 15f, 15f, new ResourceLocation("textures/arrowd.png"), false, partialTicks, alpha);
+
+                    float textX = rectX + arrowSize + margin * 2 - 3;
+                    float textY = rectY + (rectHeight - font.getFontHeight() * 0.6f) / 2;
+                    GlStateManager.pushMatrix();
+                    GlStateManager.translate(textX, textY, 0);
+                    GlStateManager.scale(0.6, 0.6, 0.6);
+                    font.drawString(currentValue, 0, 0, color.getRGB(), false);
+                    GlStateManager.popMatrix();
+
+                    // OFFSET
+                    offset += settingHeight;
+                }
             }
-            offset += 5; // Space between parameters
+            offset += 17; // Space between parameters
         }
     }
 
@@ -598,8 +700,22 @@ public class NewClickGUI extends GuiScreen {
      */
     private void drawCategoryButton(Category category, float x, float y, float width, float height, int mouseX, int mouseY, float partialTicks){
 
-        if(selectedCategory.equals(category)){
-            DrawHelper.drawRoundedRect(x, y + height, width, height, 3, new Color(28, 30, 31, 255));
+        LinearAnimation alphaAnimation = categoryAlphaAnimations.get(category);
+
+        boolean isHovering = isHoveringCategory(mouseX, mouseY, x, y, width, height, category);
+
+        if (isHovering && Mouse.isButtonDown(0) && !selectedCategory.equals(category)) {
+            alphaAnimation.AnimationUpdateValue(alphaAnimation.getAnimationValue(), 255, 200, true);
+            categoryAlphaAnimations.get(selectedCategory).AnimationUpdateValue(categoryAlphaAnimations.get(selectedCategory).getAnimationValue(), 0, 200, true);
+            selectedCategory = category;
+        }
+
+        int alpha = Math.max(0, Math.min(255, (int) alphaAnimation.getAnimationValue()));
+
+        if (selectedCategory.equals(category) || alpha > 0) {
+            Color glowColor = new Color(ColorUtil.getClickGUIColor().getRed(), ColorUtil.getClickGUIColor().getGreen(), ColorUtil.getClickGUIColor().getBlue(), alpha);
+            DrawHelper.drawGlow(x, y + height, (int)width, (int)height, 5, glowColor);
+            DrawHelper.drawRoundedRect(x, y + height, width, height, 3, new Color(28, 30, 31, alpha));
         }
 
         float iconSize = 9.6f;
@@ -619,6 +735,9 @@ public class NewClickGUI extends GuiScreen {
 
         Color c = new Color(168, 168, 168, 255);
         if(isHoveringCategory(mouseX, mouseY, x, y, width, height, category)){
+            if(Mouse.isButtonDown(0)){ // Check if left mouse button is pressed
+                selectedCategory = category;
+            }
             c = Color.WHITE;
         }
 
@@ -651,15 +770,11 @@ public class NewClickGUI extends GuiScreen {
         }
     }
 
-    // TODO : bouger les modules quand changement de catégorie
     /*
      * Mouse clicked.
      */
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
-        if(currentCategoryHover != null){
-            selectedCategory = currentCategoryHover;
-        }
         if(currentSettingHover != null){
             isSearchBoxFocused = false;
             if(currentSettingHover.isCheck()){

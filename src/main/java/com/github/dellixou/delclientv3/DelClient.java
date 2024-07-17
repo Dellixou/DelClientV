@@ -17,6 +17,7 @@ import com.github.dellixou.delclientv3.utils.Reference;
 import com.github.dellixou.delclientv3.utils.extensions.FileManager;
 import com.github.dellixou.delclientv3.utils.misc.RouteLoader;
 import com.github.dellixou.delclientv3.utils.misc.VersionVerifier;
+import com.github.dellixou.delclientv3.utils.movements.RotationUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.ChatComponentText;
 import net.minecraftforge.client.ClientCommandHandler;
@@ -111,6 +112,8 @@ public class DelClient {
         startClient();
         // MENU
         MinecraftForge.EVENT_BUS.register(new MainMenuEventHandler());
+        // Others
+        MinecraftForge.EVENT_BUS.register(new RotationUtils());
         MinecraftForge.EVENT_BUS.register(instance.chatServerNameEvent);
 
     }

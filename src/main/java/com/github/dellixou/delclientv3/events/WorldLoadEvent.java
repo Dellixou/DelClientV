@@ -42,7 +42,7 @@ public class WorldLoadEvent {
     public void onTick(TickEvent.PlayerTickEvent event){
         if(this.worldJustLoaded) {
             this.worldJustLoaded = false;
-            //DelClient.fileManager.loadRoutes();
+            DelClient.fileManager.loadRoutes();
         }
         if(this.firstTimeLoaded && !stopEnableModules){
             stopEnableModules = true;

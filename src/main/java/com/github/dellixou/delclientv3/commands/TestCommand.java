@@ -5,6 +5,7 @@ import com.github.dellixou.delclientv3.modules.core.ModuleManager;
 import com.github.dellixou.delclientv3.modules.macro.AutoForaging;
 import com.github.dellixou.delclientv3.modules.macro.AutoPowder;
 import com.github.dellixou.delclientv3.modules.macro.AutoPowderV2;
+import com.github.dellixou.delclientv3.utils.movements.RotationUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommand;
@@ -35,7 +36,7 @@ public class TestCommand implements ICommand {
 
     @Override
     public void processCommand(ICommandSender sender, String[] args) throws CommandException {
-        Minecraft.getMinecraft().displayGuiScreen(DelClient.newClickGUI);
+        RotationUtils.smoothLook(RotationUtils.getRotationToBlock(new BlockPos(0, 0, 0)), 6, null);
     }
 
 

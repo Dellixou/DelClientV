@@ -6,9 +6,9 @@ public class LinearAnimation {
 
     private float animationValue;
 
-    private float startValue;
+    public float startValue;
 
-    private float endValue;
+    public float endValue;
 
     private boolean isIncreasing;
 
@@ -30,6 +30,7 @@ public class LinearAnimation {
 
 
     }
+
 
     public LinearAnimation(float startValue, float endValue, long time, boolean instaIsDrawAnimation) {
         this.prevTime = System.currentTimeMillis();

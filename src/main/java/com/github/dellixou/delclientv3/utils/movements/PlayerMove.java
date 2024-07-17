@@ -1,11 +1,13 @@
 package com.github.dellixou.delclientv3.utils.movements;
 
+import com.github.dellixou.delclientv3.DelClient;
 import com.github.dellixou.delclientv3.modules.core.ModuleManager;
 import com.github.dellixou.delclientv3.modules.movements.UserRoute;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.Entity;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.MathHelper;
 
 public class PlayerMove {
@@ -120,6 +122,8 @@ public class PlayerMove {
         KeyBinding.setKeyBindState(mc.gameSettings.keyBindForward.getKeyCode(), true);
 
         if(!(Math.abs(distance) < this.tolerance * 1.5F)){
+            smoothLookAt(mc.thePlayer, new BlockPos(this.x, this.y, this.z));
+            /**
             if(userRoute.isLooking){
                 //return;
             }
@@ -131,8 +135,32 @@ public class PlayerMove {
                 float targetYaw = calculateYawToPoint(player, this.x, this.y, this.z);
                 setPlayerYaw(targetYaw);
             }
+             **/
         }
     }
+
+    private void smoothLookAt(EntityPlayerSP player, BlockPos target) {
+        double diffX = target.getX() + 0.5 - player.posX;
+        double diffY = target.getY() + 0.5 - (player.posY + player.getEyeHeight());
+        double diffZ = target.getZ() + 0.5 - player.posZ;
+
+        double dist = Math.sqrt(diffX * diffX + diffZ * diffZ);
+        float yaw = (float) (Math.atan2(diffZ, diffX) * 180.0 / Math.PI) - 90.0f;
+        float pitch = (float) -(Math.atan2(diffY, dist) * 180.0 / Math.PI);
+        float factor = 100;
+        player.rotationYaw = updateRotation(player.rotationYaw, yaw, factor);
+        player.rotationPitch = updateRotation(player.rotationPitch, pitch, factor);
+    }
+
+    private float updateRotation(float current, float intended, float factor) {
+        float updatedRotation = MathHelper.wrapAngleTo180_float(intended - current);
+
+        if (updatedRotation > factor) updatedRotation = factor;
+        if (updatedRotation < -factor) updatedRotation = -factor;
+
+        return current + updatedRotation;
+    }
+
 
     /**
      * Stop the player by setting velocity to 0 if activated.

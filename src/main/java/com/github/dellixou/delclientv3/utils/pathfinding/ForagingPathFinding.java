@@ -5,7 +5,9 @@ import com.github.dellixou.delclientv3.modules.core.ModuleManager;
 import com.github.dellixou.delclientv3.modules.macro.AutoForaging;
 import com.github.dellixou.delclientv3.modules.macro.AutoPowder;
 import com.github.dellixou.delclientv3.utils.movements.PlayerLookSmooth;
+import com.github.dellixou.delclientv3.utils.movements.RotationUtils;
 import com.github.dellixou.delclientv3.utils.renderer.BlockOutlineRenderer;
+import com.github.dellixou.delclientv3.utils.renderer.RenderUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.Minecraft;
@@ -23,6 +25,7 @@ import net.minecraft.util.*;
 import net.minecraft.world.World;
 import net.minecraft.world.pathfinder.WalkNodeProcessor;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
+import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import org.lwjgl.Sys;
@@ -49,6 +52,7 @@ public class ForagingPathFinding {
     public boolean far;
     private int stuckCounter = 0;
     private float randomPitchIgnore = 0;
+    public boolean isLooking = false;
 
     public Map<BlockPos, BlockPos> realChestsPosition = new HashMap<>();
 
@@ -56,11 +60,20 @@ public class ForagingPathFinding {
      * Update player movement along the path.
      */
     @SubscribeEvent
-    public void onTick(TickEvent.PlayerTickEvent event) {
-        if (randomizedWoodLoc != null) {
+    public void onTick(LivingEvent.LivingUpdateEvent event) {
+        if (randomizedWoodLoc != null && mc.thePlayer != null) {
             far = mc.thePlayer.getDistanceSq(woodLoc) >= 30;
             if (!far) {
-                smoothLookAt(mc.thePlayer, randomizedWoodLoc, false);
+                if(!isLooking){
+                    RotationUtils.smoothLook(
+                            RotationUtils.getRotationToBlock(randomizedWoodLoc),
+                            31 - (int) DelClient.settingsManager.getSettingById("auto_fora_look_speed").getValDouble(),
+                            () -> {
+                                isLooking = false;
+                            });
+                    isLooking = true;
+                }
+                //smoothLookAt(mc.thePlayer, randomizedWoodLoc, false);
                 KeyBinding.setKeyBindState(mc.gameSettings.keyBindAttack.getKeyCode(), true);
             } else {
                 KeyBinding.setKeyBindState(mc.gameSettings.keyBindAttack.getKeyCode(), false);
@@ -96,7 +109,7 @@ public class ForagingPathFinding {
         double dist = Math.sqrt(diffX * diffX + diffZ * diffZ);
         float yaw = (float) (Math.atan2(diffZ, diffX) * 180.0 / Math.PI) - 90.0f;
         float pitch = (float) -(Math.atan2(diffY, dist) * 180.0 / Math.PI);
-        float factor = (float) DelClient.settingsManager.getSettingById("auto_fora_look_speed").getValDouble();
+        float factor = (float)(DelClient.settingsManager.getSettingById("auto_fora_look_speed_far").getValDouble()) / 10f;
         player.rotationYaw = updateRotation(player.rotationYaw, yaw, factor);
         if (!ignorePitch || Math.abs(player.rotationPitch - pitch) >= 55) {
             player.rotationPitch = updateRotation(player.rotationPitch, pitch, factor);
@@ -180,7 +193,7 @@ public class ForagingPathFinding {
         double distanceToNext = player.getDistanceSq(nextPoint.getX() + 0.5, nextPoint.getY(), nextPoint.getZ() + 0.5);
         double distanceToTarget = player.getDistanceSq(woodLoc.getX() + 0.5, woodLoc.getY(), woodLoc.getZ() + 0.5);
 
-        if (distanceToTarget <= 3) { // Si on est très proche de la cible finale
+        if (distanceToTarget <= 3) {
             fineTunePosition();
             return;
         }
@@ -190,18 +203,30 @@ public class ForagingPathFinding {
             boolean blockNear = areBlocksNear();
 
             if (far || blockNear) {
-                // Comportement existant pour les longues distances
+
                 float targetYaw = calculateYawToTarget(nextPoint);
-                smoothLookAt(player, nextPoint, true);
+
+                if(!isLooking){
+                    smoothLookAt(player, nextPoint, true);
+                }
 
                 float angleDifference = MathHelper.wrapAngleTo180_float(targetYaw - player.rotationYaw);
 
                 if (Math.abs(angleDifference) < 60) {
                     KeyBinding.setKeyBindState(mc.gameSettings.keyBindForward.getKeyCode(), true);
-                    KeyBinding.setKeyBindState(mc.gameSettings.keyBindBack.getKeyCode(), false);
+                    KeyBinding.setKeyBindState(mc.gameSettings.keyBindRight.getKeyCode(), false);
+                    KeyBinding.setKeyBindState(mc.gameSettings.keyBindLeft.getKeyCode(), false);
+                    //KeyBinding.setKeyBindState(mc.gameSettings.keyBindBack.getKeyCode(), false);
                 } else {
                     KeyBinding.setKeyBindState(mc.gameSettings.keyBindForward.getKeyCode(), false);
-                    KeyBinding.setKeyBindState(mc.gameSettings.keyBindBack.getKeyCode(), true);
+                    if(angleDifference < 0){
+                        KeyBinding.setKeyBindState(mc.gameSettings.keyBindRight.getKeyCode(), true);
+                        KeyBinding.setKeyBindState(mc.gameSettings.keyBindLeft.getKeyCode(), false);
+                    }else{
+                        KeyBinding.setKeyBindState(mc.gameSettings.keyBindRight.getKeyCode(), false);
+                        KeyBinding.setKeyBindState(mc.gameSettings.keyBindLeft.getKeyCode(), true);
+                    }
+                    //KeyBinding.setKeyBindState(mc.gameSettings.keyBindBack.getKeyCode(), true);
                 }
 
                 if (blockNear) {
@@ -257,7 +282,6 @@ public class ForagingPathFinding {
         }
     }
 
-    // TODO : A*
     private void avoidObstacles() {
         boolean obstacleDetected = areBlocksInFront();
 
@@ -268,16 +292,17 @@ public class ForagingPathFinding {
             Random rand = new Random();
             boolean goLeft = rand.nextBoolean();
 
+            /**
             if (goLeft) {
                 KeyBinding.setKeyBindState(mc.gameSettings.keyBindLeft.getKeyCode(), true);
             } else {
                 KeyBinding.setKeyBindState(mc.gameSettings.keyBindRight.getKeyCode(), true);
             }
+             **/
 
             stuckCounter++;
-            if (stuckCounter > 5) {
-                //KeyBinding.setKeyBindState(mc.gameSettings.keyBindJump.getKeyCode(), true);
-                System.out.print("Stucked!");
+            if (stuckCounter > 500) {
+                KeyBinding.setKeyBindState(mc.gameSettings.keyBindJump.getKeyCode(), true);
                 stuckCounter = 0;
             }
         } else {
@@ -480,6 +505,8 @@ public class ForagingPathFinding {
         KeyBinding.setKeyBindState(mc.gameSettings.keyBindBack.getKeyCode(), false);
         KeyBinding.setKeyBindState(mc.gameSettings.keyBindLeft.getKeyCode(), false);
         KeyBinding.setKeyBindState(mc.gameSettings.keyBindRight.getKeyCode(), false);
+        KeyBinding.setKeyBindState(mc.gameSettings.keyBindAttack.getKeyCode(), false);
+        KeyBinding.setKeyBindState(mc.gameSettings.keyBindJump.getKeyCode(), false);
         if (path != null) {
             path.clear();
         }
@@ -518,28 +545,16 @@ public class ForagingPathFinding {
         x += facing.getFrontOffsetX() * forwardOffset;
         z += facing.getFrontOffsetZ() * forwardOffset;
 
-        BlockPos[] positions = new BlockPos[6]; // Seulement 2 blocs à vérifier
+        BlockPos[] positions = new BlockPos[2]; // Seulement 2 blocs à vérifier
 
         // Calculer les positions des deux blocs superposés devant le joueur
         if (facing == EnumFacing.NORTH || facing == EnumFacing.SOUTH) {
             positions[0] = new BlockPos(Math.floor(x), Math.floor(y), Math.floor(z));
             positions[1] = new BlockPos(Math.floor(x), Math.floor(y) + 1, Math.floor(z));
-
-            positions[2] = new BlockPos(Math.floor(x+1), Math.floor(y), Math.floor(z));
-            positions[3] = new BlockPos(Math.floor(x+1), Math.floor(y) + 1, Math.floor(z));
-
-            positions[4] = new BlockPos(Math.floor(x-1), Math.floor(y), Math.floor(z));
-            positions[5] = new BlockPos(Math.floor(x-1), Math.floor(y) + 1, Math.floor(z));
         }
         else{
             positions[0] = new BlockPos(Math.floor(x), Math.floor(y), Math.floor(z));
             positions[1] = new BlockPos(Math.floor(x), Math.floor(y) + 1, Math.floor(z));
-
-            positions[2] = new BlockPos(Math.floor(x), Math.floor(y), Math.floor(z+1));
-            positions[3] = new BlockPos(Math.floor(x), Math.floor(y) + 1, Math.floor(z+1));
-
-            positions[4] = new BlockPos(Math.floor(x), Math.floor(y), Math.floor(z-1));
-            positions[5] = new BlockPos(Math.floor(x), Math.floor(y) + 1, Math.floor(z-1));
         }
 
         renderer.setPositions(positions);
@@ -574,6 +589,7 @@ public class ForagingPathFinding {
     @SubscribeEvent
     public void onRenderWorldLast(RenderWorldLastEvent event) {
         if (path != null && !path.isEmpty() && path.size() != 0) {
+            if(DelClient.settingsManager.getSettingById("auto_fora_pathfinding").getValBoolean())
             renderPath3D(event.partialTicks);
         }
     }

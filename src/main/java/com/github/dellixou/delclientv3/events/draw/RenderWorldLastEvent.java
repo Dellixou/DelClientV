@@ -5,10 +5,14 @@ import com.github.dellixou.delclientv3.modules.movements.UserRoute;
 import com.github.dellixou.delclientv3.utils.misc.Route;
 import com.github.dellixou.delclientv3.utils.misc.RouteItem;
 import com.github.dellixou.delclientv3.utils.misc.Waypoint;
+import com.github.dellixou.delclientv3.utils.renderer.RenderUtils;
 import com.github.dellixou.delclientv3.utils.renderer.WorldTextRenderer;
 import net.minecraft.client.Minecraft;
+import net.minecraft.util.BlockPos;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+
+import java.awt.*;
 
 public class RenderWorldLastEvent {
 
@@ -23,8 +27,10 @@ public class RenderWorldLastEvent {
     @SubscribeEvent
     public void onRenderWorldLast(net.minecraftforge.client.event.RenderWorldLastEvent event) {
             //if(!DelClient.instance.currentPlayerLocation.equalsIgnoreCase("dungeon")) return;
+
             for(Route route : userRoute.routes){
                 if(route.getWaypoints().size() <= 0){ continue; }
+
                 WorldTextRenderer.renderTextInWorld(Minecraft.getMinecraft(), route.getName(), route.getWaypoints().get(0).getX(), route.getWaypoints().get(0).getY() + 3, route.getWaypoints().get(0).getZ(), event.partialTicks, 0.01F, true);//0.031F)
                 if(route.getIndeWaypoints().size() <= 0){ continue; }
                 for(Waypoint waypoint : route.getIndeWaypoints()){

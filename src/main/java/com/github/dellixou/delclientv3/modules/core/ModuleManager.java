@@ -3,10 +3,7 @@ package com.github.dellixou.delclientv3.modules.core;
 import com.github.dellixou.delclientv3.DelClient;
 import com.github.dellixou.delclientv3.modules.floor7.AutoLeaps;
 import com.github.dellixou.delclientv3.modules.floor7.AutoPre4;
-import com.github.dellixou.delclientv3.modules.macro.AutoFish;
-import com.github.dellixou.delclientv3.modules.macro.AutoForaging;
-import com.github.dellixou.delclientv3.modules.macro.AutoPowder;
-import com.github.dellixou.delclientv3.modules.macro.AutoPowderV2;
+import com.github.dellixou.delclientv3.modules.macro.*;
 import com.github.dellixou.delclientv3.modules.misc.AutoGFS;
 import com.github.dellixou.delclientv3.modules.misc.TestingSettings;
 import com.github.dellixou.delclientv3.modules.movements.AutoSprint;
@@ -15,6 +12,7 @@ import com.github.dellixou.delclientv3.modules.movements.UserRoute;
 import com.github.dellixou.delclientv3.modules.movements.Velocity;
 import com.github.dellixou.delclientv3.modules.render.ClickGui;
 import com.github.dellixou.delclientv3.modules.render.FOVChanger;
+import com.github.dellixou.delclientv3.modules.render.HighlightBlock;
 import com.github.dellixou.delclientv3.modules.render.ModuleList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.crash.CrashReport;
@@ -42,12 +40,14 @@ public class ModuleManager {
         newMod(new FOVChanger());
         newMod(new ClickGui());
         newMod(new ModuleList());
+        newMod(new HighlightBlock());
         // FLOOR 7
         newMod(new AutoPre4());
         newMod(new AutoLeaps());
         // MACRO
         newMod(new AutoFish());
         newMod(new AutoForaging());
+        newMod(new AutoForagingV2());
         //newMod(new AutoPowder());
         //newMod(new AutoPowderV2());
         // MISC

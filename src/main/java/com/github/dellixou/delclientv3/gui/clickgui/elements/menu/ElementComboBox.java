@@ -84,7 +84,7 @@ public class ElementComboBox extends Element {
 		glyphPageFontRenderer.drawString(currentValue, 0, 0, colorOpaHover.getRGB(), false);
 		GlStateManager.popMatrix();
 
-		settingsArrow.drawComboArrow((float) (x+width-13), textY-1.5f, 12, (float) 12, ARROW_IMAGE, comboextended, partialTicks);
+		settingsArrow.drawComboArrow((float) (x+width-13), textY-1.5f, 12, (float) 12, ARROW_IMAGE, comboextended, partialTicks, 1f);
 
 		// Update animation progress
 		if (comboextended) {

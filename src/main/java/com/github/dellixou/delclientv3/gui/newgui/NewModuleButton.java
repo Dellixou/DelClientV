@@ -17,9 +17,11 @@ import com.github.dellixou.delclientv3.utils.Color.ColorUtils;
 import com.github.dellixou.delclientv3.utils.gui.animations.LinearAnimation;
 import com.github.dellixou.delclientv3.utils.gui.glyph.GlyphPageFontRenderer;
 import com.github.dellixou.delclientv3.utils.gui.misc.DrawHelper;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.ResourceLocation;
+import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -37,13 +39,13 @@ public class NewModuleButton {
     Color hoverColor = new Color(76, 76, 88, 255);
 
     // Animations
-    LinearAnimation checkBoxClickAnim;
+    private LinearAnimation checkBoxClickAnim;
+    private LinearAnimation rotationSetAnimation;
     private final AnimatedColor buttonColor = new AnimatedColor(baseColor, hoverColor, 200, false);
     private final AnimatedColor checkBoxColor = new AnimatedColor(new Color(64, 64, 64, 255), ColorUtil.getClickGUIColor(), 200, true);
 
     // Module info
     public Module mod;
-    public ArrayList<NewElement> menuelements;
     public Panel parent;
     public double x;
     public double y;
@@ -79,24 +81,9 @@ public class NewModuleButton {
             bgX+=10;
         }
         this.originalX = bgX + 4;
+        this.rotationSetAnimation = new LinearAnimation(0, 0, 130, false);
 
         updateCheckBoxState();
-    }
-
-    public void updateSettings(){
-        menuelements = new ArrayList<NewElement>();
-        if (DelClient.settingsManager.getSettingsByMod(mod) != null)
-            for (Setting s : DelClient.settingsManager.getSettingsByMod(mod)) {
-                if (s.isCheck()) {
-                    menuelements.add(new NewElementCheckBox(this, s));
-                } else if (s.isSlider()) {
-                    //menuelements.add(new ElementSlider(this, s));
-                } else if (s.isCombo()) {
-                    //menuelements.add(new ElementComboBox(this, s));
-                } else if(s.isText()) {
-                    //menuelements.add(new ElementWriteBox(this, s));
-                }
-            }
     }
 
     /*
@@ -160,16 +147,47 @@ public class NewModuleButton {
         }
 
         if(mod.hasSettings()){ // HAVE SETTINGS ?
+
             // Settings button
-            GlStateManager.pushMatrix();
-            GlStateManager.translate(bgX+23, bgY+9, 0);
-            GlStateManager.scale(0.3, 0.3, 0.3);
-            GlStateManager.translate(-(bgX+23), -(bgY+9), 0);
+            boolean wasSettingHovering = isSettingHovering;
             isSettingHovering = isMouseOverSettings(mouseX, mouseY, x, width, y, height);
+
+            // Start the animation if the hover state changes
+            if (isSettingHovering != wasSettingHovering) {
+                float startRotation = rotationSetAnimation.getAnimationValue();
+                float endRotation = isSettingHovering ? 90 : 0;
+                rotationSetAnimation = new LinearAnimation(startRotation, endRotation, 130, true);
+            }
+
+            // Calculate the center of the settings icon
+            float centerX = bgX + 23 + (32 * 0.3f / 2);
+            float centerY = bgY + 9 - (32*0.3f/2);
+
+            // Get the current rotation from the animation
+            float rotation = rotationSetAnimation.getAnimationValue();
+
+            // Determine the color
             Color c = isSettingHovering ? new Color(255, 255, 255, 176) : new Color(215, 215, 215, 176);
-            DrawHelper.drawRoundedTexture(new ResourceLocation("textures/settings.png"), bgX+23, bgY+9, 32, 32, 1, c);
-            GlStateManager.popMatrix();
+
+            // Draw the rotated and scaled texture
+            drawRotatedScaledTexture(new ResourceLocation("textures/settings.png"), centerX, centerY, 32, 32, 0.3f, rotation, c);
         }
+    }
+
+    // Add this method to your class
+    private void drawRotatedScaledTexture(ResourceLocation resource, float centerX, float centerY, int width, int height, float scale, float rotation, Color color) {
+        GlStateManager.pushMatrix();
+        GlStateManager.translate(centerX, centerY, 0);
+        GlStateManager.rotate(rotation, 0, 0, 1);
+        GlStateManager.scale(scale, scale, scale);
+        GlStateManager.translate(-width / 2f, -height / 2f, 0);
+        GlStateManager.color(color.getRed() / 255f, color.getGreen() / 255f, color.getBlue() / 255f, color.getAlpha() / 255f);
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+        Minecraft.getMinecraft().getTextureManager().bindTexture(resource);
+        Gui.drawModalRectWithCustomSizedTexture(0, 0, 0, 0, width, height, width, height);
+        GlStateManager.disableBlend();
+        GlStateManager.popMatrix();
     }
 
     /*

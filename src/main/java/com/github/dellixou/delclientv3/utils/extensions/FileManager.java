@@ -257,15 +257,30 @@ public class FileManager {
                         float pitch = jsonWaypoint.get("pitch").getAsFloat();
                         boolean independent = jsonWaypoint.get("independent").getAsBoolean();
                         String routeItem = jsonWaypoint.get("routeItem").getAsString();
-                        boolean edgeJump = jsonWaypoint.get("edgeJump").getAsBoolean();
+                        boolean edgeJump;
+                        try{
+                            edgeJump = jsonWaypoint.get("edgeJump").getAsBoolean();
+                        }catch (Exception ignored){
+                            edgeJump = false;
+                        }
                         boolean bonzo;
                         try{
                             bonzo = jsonWaypoint.get("bonzo").getAsBoolean();
-                        }catch (Exception e){
+                        }catch (Exception ignored){
                             bonzo = false;
                         }
-                        boolean wait = jsonWaypoint.get("wait").getAsBoolean();
-                        float time = jsonWaypoint.get("time").getAsFloat();
+                        boolean wait;
+                        try{
+                            wait = jsonWaypoint.get("wait").getAsBoolean();
+                        }catch (Exception ignored){
+                            wait = false;
+                        }
+                        float time;
+                        try{
+                            time = jsonWaypoint.get("time").getAsFloat();
+                        }catch (Exception ignored){
+                            time = 0.0f;
+                        }
                         route.addWaypoints(x, y, z, stopVelocity, useJump, look, click, yaw, pitch, independent, RouteItem.valueOf(routeItem), edgeJump, bonzo, wait, time);
                     }
 
