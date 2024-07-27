@@ -4,7 +4,7 @@ import com.github.dellixou.delclientv3.DelClient;
 import com.github.dellixou.delclientv3.modules.core.ModuleManager;
 import com.github.dellixou.delclientv3.modules.movements.UserRoute;
 import com.github.dellixou.delclientv3.utils.misc.Route;
-import com.github.dellixou.delclientv3.utils.misc.RouteItem;
+import com.github.dellixou.delclientv3.utils.enums.RouteItem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.command.CommandException;

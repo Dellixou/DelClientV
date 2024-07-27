@@ -62,6 +62,8 @@ repositories {
     maven("https://repo.spongepowered.org/maven/")
     // If you don't want to log in with your real minecraft account, remove this line
     maven("https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1")
+
+    maven("https://m2.dv8tion.net/releases")
 }
 
 val shadowImpl: Configuration by configurations.creating {
@@ -82,6 +84,8 @@ dependencies {
     // If you don't want to log in with your real minecraft account, remove this line
     runtimeOnly("me.djtheredstoner:DevAuth-forge-legacy:1.1.2")
 
+    implementation("net.dv8tion:JDA:5.0.0-beta.18")
+    shadowImpl("net.dv8tion:JDA:5.0.0-beta.18")
 }
 
 // Tasks:
@@ -137,7 +141,7 @@ tasks.shadowJar {
         }
     }
 
-    // If you want to include other dependencies and shadow them, you can relocate them in here
+    // Si vous voulez inclure d'autres dépendances et les shadow, vous pouvez les relocaliser ici
     fun relocate(name: String) = relocate(name, "$baseGroup.deps.$name")
 }
 

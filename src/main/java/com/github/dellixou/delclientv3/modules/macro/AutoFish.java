@@ -2,11 +2,10 @@ package com.github.dellixou.delclientv3.modules.macro;
 
 import com.github.dellixou.delclientv3.DelClient;
 import com.github.dellixou.delclientv3.events.sounds.AutoFishSoundEvent;
-import com.github.dellixou.delclientv3.gui.settings.Setting;
+import com.github.dellixou.delclientv3.modules.core.settings.Setting;
 import com.github.dellixou.delclientv3.modules.core.Category;
 import com.github.dellixou.delclientv3.modules.core.Module;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;

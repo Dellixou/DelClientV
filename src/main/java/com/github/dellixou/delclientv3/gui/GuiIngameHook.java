@@ -1,20 +1,16 @@
 package com.github.dellixou.delclientv3.gui;
 
 import com.github.dellixou.delclientv3.DelClient;
-import com.github.dellixou.delclientv3.gui.clickgui.util.ColorUtil;
 import com.github.dellixou.delclientv3.modules.core.Module;
 import com.github.dellixou.delclientv3.modules.core.ModuleManager;
 import com.github.dellixou.delclientv3.modules.macro.AutoForaging;
-import com.github.dellixou.delclientv3.modules.macro.AutoPowderV2;
-import com.github.dellixou.delclientv3.utils.gui.Blur;
-import com.github.dellixou.delclientv3.utils.gui.DrawingUtils;
-import com.github.dellixou.delclientv3.utils.gui.Wrapper;
-import com.github.dellixou.delclientv3.utils.gui.animations.FadeInAnimation;
+import com.github.dellixou.delclientv3.modules.macro.AutoPowder;
+import com.github.dellixou.delclientv3.utils.ColorUtils;
+import com.github.dellixou.delclientv3.utils.gui.shaders.Blur;
 import com.github.dellixou.delclientv3.utils.gui.glyph.GlyphPageFontRenderer;
-import com.github.dellixou.delclientv3.utils.gui.misc.BlurHelper;
-import com.github.dellixou.delclientv3.utils.gui.misc.DrawHelper;
-import com.github.dellixou.delclientv3.utils.gui.misc.ShaderHelper;
+import com.github.dellixou.delclientv3.utils.gui.shaders.misc.DrawHelper;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
@@ -37,7 +33,6 @@ public class GuiIngameHook {
     public boolean enabled = false;
     private final boolean draggingModules = false;
 
-    private final FadeInAnimation hoverAnim = new FadeInAnimation(60, 30);
     private static final GlyphPageFontRenderer glyphPageFontRenderer = GlyphPageFontRenderer.create("Arial", 28, true, true, true);
     private static final GlyphPageFontRenderer helpFulFont = GlyphPageFontRenderer.create("Arial", 24, true, true, true);
     float scaleText = 0.6f;
@@ -65,9 +60,8 @@ public class GuiIngameHook {
                 if(enabled){renderModulesList();}
 
                 // Render HUD Auto Foraging
-                AutoForaging autoForaging = (AutoForaging) ModuleManager.getModuleById("auto_fora");
-                renderAutoForagingHUD(mc, autoForaging);
-
+                //AutoForaging autoForaging = (AutoForaging) ModuleManager.getModuleById("auto_fora");
+                //renderAutoForagingHUD(mc, autoForaging);
 
             }
         }
@@ -128,11 +122,14 @@ public class GuiIngameHook {
                 // Background Module
                 int colorBG = DelClient.settingsManager.getSettingById("module_list_bg_rainbow").getValBoolean() ? rainbow(counter[0] * 250) : new Color(0, 0, 0, 127).getRGB();
                 if(index == 0){
-                    DrawingUtils.drawRect(textX - 2, textY, textX + moduleWidth * scaleText + 2, textY + rectHeight + 1, colorBG);
+                    Gui.drawRect((int)(textX - 2), (int)textY, (int)(textX + moduleWidth * scaleText + 2), (int)(textY + rectHeight + 1), colorBG);
+                    //Blur.getInstance().renderBlurSection((int)(textX - 2), (int)textY, (int)(textX + moduleWidth * scaleText + 2), (int)(rectHeight + 1), 10);
                 }else if(index == toggledModules.size()-1){
-                    DrawingUtils.drawRect(textX - 2, textY + 1, textX + moduleWidth * scaleText + 2, textY + rectHeight + 2, colorBG);
+                    Gui.drawRect((int)(textX - 2), (int)textY + 1, (int)(textX + moduleWidth * scaleText + 2), (int)(textY + rectHeight + 2), colorBG);
+                    //Blur.getInstance().renderBlurSection((int)(textX - 2), (int)textY + 1, (int)(textX + moduleWidth * scaleText + 2), (int)(rectHeight + 1), 10);
                 }else{
-                    DrawingUtils.drawRect(textX - 2, textY + 1, textX + moduleWidth * scaleText + 2, textY + rectHeight + 1, colorBG);
+                    Gui.drawRect((int)(textX - 2), (int)textY + 1, (int)(textX + moduleWidth * scaleText + 2), (int)(textY + rectHeight + 1), colorBG);
+                    //Blur.getInstance().renderBlurSection((int)(textX - 2), (int)textY + 0.8f, (int)(textX + moduleWidth * scaleText + 2), (int)(rectHeight), 10);
                 }
 
                 // Text Module
@@ -151,19 +148,6 @@ public class GuiIngameHook {
                 index++;
                 x++;
                 counter[0]++;
-            }
-        }
-
-        // Final adjustment for the bottom Y to include the last module's height
-        if (hasActiveModules) {
-            if (Minecraft.getMinecraft().ingameGUI.getChatGUI().getChatOpen()) {
-                int x1 = (int) x;
-                // Check if the mouse is within the bounds of the rectangle encompassing all modules
-                if (isHovered((int) DelClient.instance.mouseXPos, (int) DelClient.instance.mouseYPos, widthLoc - 2, widthLoc + maxWidth + 3, topY - (int) (Wrapper.fr.FONT_HEIGHT * x), topY + 3)) {
-                    DrawingUtils.drawRect(widthLoc - 2, topY - (int) (Wrapper.fr.FONT_HEIGHT * x) + 1, widthLoc + maxWidth + 3, topY + 3, new Color(255, 255, 255, hoverAnim.getProgress()));
-                } else {
-                    hoverAnim.reset();
-                }
             }
         }
     }
@@ -196,9 +180,9 @@ public class GuiIngameHook {
         // Background
         Color a = new Color(29, 29, 29, 180);
         Color b = new Color(
-                (int)(ColorUtil.getClickGUIColor().getRed() * power),
-                (int)(ColorUtil.getClickGUIColor().getGreen() * power),
-                (int)(ColorUtil.getClickGUIColor().getBlue() * power),
+                (int)(ColorUtils.getClickGUIColor().getRed() * power),
+                (int)(ColorUtils.getClickGUIColor().getGreen() * power),
+                (int)(ColorUtils.getClickGUIColor().getBlue() * power),
                 160
         );
 
@@ -274,7 +258,7 @@ public class GuiIngameHook {
     /**
      * Renders the HUD for Auto Powder.
      */
-    private void renderAutoPowderHUD(Minecraft mc, AutoPowderV2 autoPowder){
+    private void renderAutoPowderHUD(Minecraft mc, AutoPowder autoPowder){
         // Somes values
         ScaledResolution sr = new ScaledResolution(mc);
         int screenWidth = sr.getScaledWidth();
@@ -297,9 +281,9 @@ public class GuiIngameHook {
         // Background
         Color a = new Color(29, 29, 29, 180);
         Color b = new Color(
-                (int)(ColorUtil.getClickGUIColor().getRed() * power),
-                (int)(ColorUtil.getClickGUIColor().getGreen() * power),
-                (int)(ColorUtil.getClickGUIColor().getBlue() * power),
+                (int)(ColorUtils.getClickGUIColor().getRed() * power),
+                (int)(ColorUtils.getClickGUIColor().getGreen() * power),
+                (int)(ColorUtils.getClickGUIColor().getBlue() * power),
                 160
         );
 
@@ -318,7 +302,7 @@ public class GuiIngameHook {
         //Blur.getInstance().renderBlurSection(rectX+2, rectY+2, rectWidth-4, animatedRectHeight-4, 15);
         DrawHelper.drawRoundedGradientBlurredRect(rectX, rectY+animatedRectHeight, rectWidth, animatedRectHeight, 4, 7, a, a, b, b);
 
-        DrawHelper.drawRoundedRectOutline(rectX, rectY+animatedRectHeight, rectWidth, animatedRectHeight, 4, 1.5f, ColorUtil.getClickGUIColor().darker());
+        DrawHelper.drawRoundedRectOutline(rectX, rectY+animatedRectHeight, rectWidth, animatedRectHeight, 4, 1.5f, ColorUtils.getClickGUIColor().darker());
 
         GlStateManager.pushMatrix();
         GlStateManager.translate(rectX, rectY + animatedRectHeight, 0);
@@ -331,7 +315,7 @@ public class GuiIngameHook {
         GlStateManager.popMatrix();
     }
 
-    private void renderHUDText(float rectX, float rectY, float scaledMargin, float scaleText, AutoPowderV2 autoPowder) {
+    private void renderHUDText(float rectX, float rectY, float scaledMargin, float scaleText, AutoPowder autoPowder) {
         float textY = 2;
         float lineHeight = helpFulFont.getFontHeight() * scaleText + 2; // Ajout d'un espacement supplémentaire
 

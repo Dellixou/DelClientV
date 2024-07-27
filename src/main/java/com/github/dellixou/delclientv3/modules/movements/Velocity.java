@@ -1,7 +1,7 @@
 package com.github.dellixou.delclientv3.modules.movements;
 
 import com.github.dellixou.delclientv3.DelClient;
-import com.github.dellixou.delclientv3.gui.settings.Setting;
+import com.github.dellixou.delclientv3.modules.core.settings.Setting;
 import com.github.dellixou.delclientv3.modules.core.Category;
 import com.github.dellixou.delclientv3.modules.core.Module;
 import net.minecraft.client.Minecraft;

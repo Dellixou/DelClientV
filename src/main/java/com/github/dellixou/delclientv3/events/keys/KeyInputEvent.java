@@ -15,10 +15,9 @@ public class KeyInputEvent {
     private boolean canPress = true; // Flag to track if key press is allowed
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1); // Scheduler to reset flag
 
-    /**
+    /*
      * Function loaded every input keyboard
-     **/
-
+     */
     @SubscribeEvent
     public void onKeyPress(InputEvent.KeyInputEvent event) {
         int code = Keyboard.getEventKey();

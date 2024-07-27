@@ -1,16 +1,20 @@
 package com.github.dellixou.delclientv3.gui.newgui;
 
 import com.github.dellixou.delclientv3.DelClient;
-import com.github.dellixou.delclientv3.gui.clickgui.util.ColorUtil;
-import com.github.dellixou.delclientv3.gui.clickgui.util.SettingsArrow;
-import com.github.dellixou.delclientv3.gui.settings.Setting;
+import com.github.dellixou.delclientv3.gui.oldgui.util.FontUtil;
+import com.github.dellixou.delclientv3.utils.RenderUtils;
+import com.github.dellixou.delclientv3.utils.gui.ImageProcessor;
+import com.github.dellixou.delclientv3.utils.gui.SettingsArrow;
+import com.github.dellixou.delclientv3.modules.core.settings.Setting;
 import com.github.dellixou.delclientv3.modules.core.Category;
 import com.github.dellixou.delclientv3.modules.core.Module;
 import com.github.dellixou.delclientv3.modules.core.ModuleManager;
-import com.github.dellixou.delclientv3.utils.Reference;
+import com.github.dellixou.delclientv3.utils.ColorUtils;
+import com.github.dellixou.delclientv3.utils.misc.Reference;
 import com.github.dellixou.delclientv3.utils.gui.animations.LinearAnimation;
 import com.github.dellixou.delclientv3.utils.gui.glyph.GlyphPageFontRenderer;
-import com.github.dellixou.delclientv3.utils.gui.misc.DrawHelper;
+import com.github.dellixou.delclientv3.utils.gui.shaders.misc.DrawHelper;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
@@ -22,14 +26,14 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 
+import static org.lwjgl.opengl.GL11.glColor4f;
 import static org.lwjgl.opengl.GL11.glEnable;
 
 import java.awt.*;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 public class NewClickGUI extends GuiScreen {
 
@@ -41,6 +45,12 @@ public class NewClickGUI extends GuiScreen {
 
     // Fonts
     private static final GlyphPageFontRenderer font = GlyphPageFontRenderer.create("Arial", 24, true, true, true);
+
+    // Images
+    private ResourceLocation BACK_IMAGE = ImageProcessor.resizeAndLoadTexture(new ResourceLocation("textures/back.png"), 512, 512);
+    private ResourceLocation SEARCH_IMAGE = ImageProcessor.resizeAndLoadTexture(new ResourceLocation("textures/search.png"), 512, 512);
+    private ResourceLocation ARROW_IMAGE = ImageProcessor.resizeAndLoadTexture(new ResourceLocation("textures/arrowd.png"), 512, 512);
+    public ResourceLocation SETTINGS_IMAGE = ImageProcessor.resizeAndLoadTexture(new ResourceLocation("textures/settings.png"), 512, 512);
 
     // Background
     public int BGWidth = 320;
@@ -89,6 +99,7 @@ public class NewClickGUI extends GuiScreen {
     public boolean isSettingOpen = false;
     private Color settingBGColor = new Color(47, 47, 56, 255);
     private Setting currentSettingHover;
+    public Map<String, Setting> currentOptionHovered;
     private final SettingsArrow settingsArrow = new SettingsArrow();
 
     // Settings Scroll
@@ -97,6 +108,14 @@ public class NewClickGUI extends GuiScreen {
     public float settingsCurrentScrollAmount = 0f;
     private float settingsMaxScroll = 0f;
     private float settingsLerpSpeedScroll = 0.2f;
+
+    private int settingsScrollBarWidth = 2;
+    private int settingsScrollBarHeight;
+    private int settingsScrollBarX;
+    private int settingsScrollBarY;
+    private int settingsScrollBarThumbHeight;
+    private int settingsScrollBarThumbY;
+    private boolean isDraggingSettingsScrollBar = false;
 
     // Categories
     public Map<Category, ResourceLocation> categoryIcon;
@@ -133,7 +152,7 @@ public class NewClickGUI extends GuiScreen {
             buttons.get(i).clickGUI = this;
             buttons.get(i).index = i;
             buttons.get(i).updateCheckBoxState();
-            if(mod.getId() == "click_gui"){
+            if(mod.getId().equals("click_gui") || mod.getId().equals("remote_control")){
                 blackListMod.add(newModuleButton);
             }
             buttons.get(i).checkBlacklist();
@@ -143,17 +162,17 @@ public class NewClickGUI extends GuiScreen {
         categoryIcon = new HashMap<>();
         for(Category cat : Category.values()){
             if(cat.equals(Category.FLOOR7)){
-                categoryIcon.put(cat, new ResourceLocation("textures/dungeon.png"));
+                categoryIcon.put(cat, ImageProcessor.resizeAndLoadTexture(new ResourceLocation("textures/dungeon.png"), 512, 512));
             }else if(cat.equals(Category.MOVEMENT)){
-                categoryIcon.put(cat, new ResourceLocation("textures/movement.png"));
+                categoryIcon.put(cat, ImageProcessor.resizeAndLoadTexture(new ResourceLocation("textures/movement.png"), 512, 512));
             }else if(cat.equals(Category.RENDER)){
-                categoryIcon.put(cat, new ResourceLocation("textures/render.png"));
+                categoryIcon.put(cat, ImageProcessor.resizeAndLoadTexture(new ResourceLocation("textures/render.png"), 512, 512));
             }else if(cat.equals(Category.MACRO)){
-                categoryIcon.put(cat, new ResourceLocation("textures/macro.png"));
+                categoryIcon.put(cat, ImageProcessor.resizeAndLoadTexture(new ResourceLocation("textures/macro.png"), 512, 512));
             }else if(cat.equals(Category.PLAYER)){
-                categoryIcon.put(cat, new ResourceLocation("textures/player.png"));
+                categoryIcon.put(cat, ImageProcessor.resizeAndLoadTexture(new ResourceLocation("textures/player.png"), 512, 512));
             }else if(cat.equals(Category.MISC)){
-                categoryIcon.put(cat, new ResourceLocation("textures/misc.png"));
+                categoryIcon.put(cat, ImageProcessor.resizeAndLoadTexture(new ResourceLocation("textures/misc.png"), 512, 512));
             }
         }
 
@@ -193,6 +212,9 @@ public class NewClickGUI extends GuiScreen {
 
     }
 
+    /*
+     * When gui is closed.
+     */
     @Override
     public void onGuiClosed() {
         // End Blur
@@ -260,7 +282,7 @@ public class NewClickGUI extends GuiScreen {
         GlStateManager.translate(-screenWidth / 2, -screenHeight / 2, 0);
 
         // Draw the rectangle
-        DrawHelper.drawRoundedBlurredRect(rectX-7.5f, rectY+BGHeight-7.5f+15, BGWidth+15, BGHeight+15, 3, 11, new Color(21, 21, 21, 150));
+        DrawHelper.drawRoundedBlurredRect(rectX-7.5f, rectY+BGHeight-7.5f+15, BGWidth+15, BGHeight+15, 10, 20, new Color(21, 21, 21, 150));
         DrawHelper.drawRoundedRect(rectX, rectY+BGHeight, BGWidth, BGHeight, 3, new Color(21, 21, 26, 255));
 
 
@@ -275,7 +297,7 @@ public class NewClickGUI extends GuiScreen {
 
         // Draw Modules Buttons
         glEnable(GL11.GL_SCISSOR_TEST);
-        scissor(rectX + BGWidth - buttonXPos - sideMargin * 2, rectY + 10, buttonXPos + sideMargin, BGHeight - 20);
+        scissor(rectX + BGWidth - buttonXPos - sideMargin * 2, rectY + 5, buttonXPos + sideMargin, BGHeight - 20);
 
         GlStateManager.pushMatrix();
         GlStateManager.translate(rectX + BGWidth - buttonXPos - sideMargin, rectY + 10 - (int)scrollAmount, 0);
@@ -382,7 +404,9 @@ public class NewClickGUI extends GuiScreen {
                 GlStateManager.translate(Sx + Swidth, Sy, 0);
                 GlStateManager.scale(scaleX, 1, 1);
                 GlStateManager.translate(-(Sx + Swidth), -Sy, 0);
-                DrawHelper.drawRoundedRect(Sx, Sy + Sheight, Swidth, Sheight, 3, new Color(39, 39, 49, 255));
+
+                DrawHelper.drawRoundedBlurredRect(Sx, Sy + Sheight-7.5f, Swidth, Sheight-15, 3, 15, new Color(37, 37, 43, 255));
+                DrawHelper.drawRoundedRect(Sx, Sy + Sheight, Swidth, Sheight, 3, new Color(37, 37, 43, 255));
 
                 // Title Mod
                 GlStateManager.pushMatrix();
@@ -391,15 +415,26 @@ public class NewClickGUI extends GuiScreen {
                 font.drawString("§l" + button.mod.getName(), 0, 0, new Color(255, 255, 255, 255).getRGB(), true);
                 GlStateManager.popMatrix();
 
+                settingsScrollBarHeight = BGHeight - 40;
+                settingsScrollBarX = (int) (Sx + Swidth - settingsScrollBarWidth-5);
+                settingsScrollBarY = (int) (Sy + 25);
+                updateSettingsScrollBarThumb();
+
                 // Back button
                 isBackSettingHover = isBackSettingOver(mouseX, mouseY, Sx, Sy, 32, 32);
                 Color c = isBackSettingHover ? new Color(215, 215, 215, 176) : new Color(167, 167, 167, 176);
 
                 GlStateManager.pushMatrix();
-                GlStateManager.translate(Sx+3, Sy+3, 0);
-                GlStateManager.scale(0.7, 0.7, 0.7);
-                GlStateManager.translate(-(Sx+3), -(Sy+3), 0);
-                DrawHelper.drawRoundedTexture(new ResourceLocation("textures/back.png"), Sx+3, Sy+3+32, 32, 32, 1, c);
+                GlStateManager.enableBlend();
+                GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+                if(isBackSettingHover){
+                    glColor4f(0.7f, 0.7f, 0.7f, 1);
+                }else{
+                    glColor4f(1f, 1f, 1f, 1);
+                }
+                Minecraft.getMinecraft().getTextureManager().bindTexture(BACK_IMAGE);
+                drawModalRectWithCustomSizedTexture((int)Sx+1, (int)Sy+2, 0, 0, 24, 23, 24, 23);
+                GlStateManager.disableBlend();
                 GlStateManager.popMatrix();
 
                 if(button.mod.hasSettings()){
@@ -416,7 +451,7 @@ public class NewClickGUI extends GuiScreen {
                     scissorSettings(Sx-50, Sy + 25, Swidth+50, Sheight - 30);
 
                     // Draw settings
-                    drawSettings(button, Sx, Sy + 25 - settingsScrollAmount, Swidth-2, mouseX, mouseY, partialTicks);
+                    drawSettings(button, Sx, Sy + 25 - settingsScrollAmount, Swidth-10, mouseX, mouseY, partialTicks);
 
                     // Disable scissor
                     GL11.glDisable(GL11.GL_SCISSOR_TEST);
@@ -510,15 +545,7 @@ public class NewClickGUI extends GuiScreen {
         DrawHelper.drawRoundedRect(searchBoxX, searchBoxY+searchBoxHeight, searchBoxWidth, searchBoxHeight, 6, new Color(40, 40, 40, 200));
 
         // Search icon
-        GL11.glEnable(GL13.GL_MULTISAMPLE);
-        GlStateManager.pushMatrix();
-        GlStateManager.translate(searchBoxX+3, searchBoxY+12.5f, 0);
-        GlStateManager.scale(0.3, 0.3, 0.3);
-        GlStateManager.translate(-(searchBoxX+3), -(searchBoxY+12.5f), 0);
-        DrawHelper.drawRoundedTexture(new ResourceLocation("textures/search.png"), searchBoxX+3, searchBoxY+12.5f, 32, 32, 1, new Color(167, 167, 167, 176));
-        GlStateManager.popMatrix();
-        GL11.glDisable(GL13.GL_MULTISAMPLE);
-
+        RenderUtils.renderIcon(SEARCH_IMAGE, 8, new Color(125, 125, 125, 255), (int)searchBoxX+4, (int)searchBoxY+4);
 
         // Texte dans la search box
         if (searchText.isEmpty() && !isSearchBoxFocused) {
@@ -542,10 +569,22 @@ public class NewClickGUI extends GuiScreen {
     }
 
     /*
+     * Util to remove _ and put upper case title category name.
+     */
+    public static String formatCategoryName(String input) {
+        String[] words = input.replace('_', ' ').split("\\s+");
+
+        return Arrays.stream(words)
+                .map(word -> word.substring(0, 1).toUpperCase() + word.substring(1).toLowerCase())
+                .collect(Collectors.joining(" "));
+    }
+
+    /*
      * Draw settings.
      */
     private void drawSettings(NewModuleButton button, float x, float y, float width, int mouseX, int mouseY, float partialTicks) {
         int offset = 10;
+
         for (String category : DelClient.settingsManager.getAllSettingsCategory(button.mod)) {
             List<Setting> categorySettings = DelClient.settingsManager.getSettingsByModAndCategory(button.mod, category);
 
@@ -565,11 +604,13 @@ public class NewClickGUI extends GuiScreen {
             GlStateManager.pushMatrix();
             GlStateManager.translate(x + 3, y + offset - 9, 0);
             GlStateManager.scale(0.6, 0.6, 0.6);
-            font.drawString("§l- " + category.substring(0, 1).toUpperCase() + category.substring(1).toLowerCase() + " : ", 0, 0, new Color(234, 234, 234, 220).getRGB(), false);
+            String categoryName = formatCategoryName(category);
+            font.drawString(categoryName + " : ", 0, 0, new Color(234, 234, 234, 220).getRGB(), false);
             GlStateManager.popMatrix();
 
             // Draw parameters
             for (Setting setting : categorySettings) {
+                // CHECK
                 if (setting.isCheck()) {
                     GlStateManager.pushMatrix();
                     GlStateManager.translate(x + 6, y + offset + font.getFontHeight()/2*0.6, 0);
@@ -579,7 +620,7 @@ public class NewClickGUI extends GuiScreen {
 
                     Color checkColor;
                     if (setting.getValBoolean()) {
-                        checkColor = ColorUtil.getClickGUIColor();
+                        checkColor = ColorUtils.getClickGUIColor().darker();
                     } else {
                         checkColor = new Color(64, 64, 64, 255);
                     }
@@ -598,6 +639,7 @@ public class NewClickGUI extends GuiScreen {
                     offset += 17;
                 }
 
+                // SLIDER
                 if (setting.isSlider()) {
                     GlStateManager.pushMatrix();
                     GlStateManager.translate(x + 6, y + offset + font.getFontHeight()/2*0.6, 0);
@@ -635,10 +677,10 @@ public class NewClickGUI extends GuiScreen {
                     // Background
                     DrawHelper.drawRoundedRect(x + 6, y + offset + 16f, width-12, 2, 1, new Color(0x232323));
                     // Percent
-                    DrawHelper.drawRoundedRect(x + 6, y + offset + 16f, setting.currentPercentBar * (width - 12), 2, 1, ColorUtil.getClickGUIColor());
+                    DrawHelper.drawRoundedRect(x + 6, y + offset + 16f, setting.currentPercentBar * (width - 12), 2, 1, ColorUtils.getClickGUIColor().darker());
 
                     // Circle
-                    Color c = isHoveringSetting(mouseX, mouseY, x+6, y+offset+12f, width-12, 5, setting) ? ColorUtil.getClickGUIColor().darker() : ColorUtil.getClickGUIColor();
+                    Color c = isHoveringSetting(mouseX, mouseY, x+6, y+offset+12f, width-12, 5, setting) ? ColorUtils.getClickGUIColor().darker().darker() : ColorUtils.getClickGUIColor().darker();
                     if (setting.getValDouble() > setting.getMin() && setting.getValDouble() < setting.getMax()) {
                         DrawHelper.drawCircle(x + 6 + setting.currentPercentBar * (width - 12), y+offset+15, 2, c);
                     }
@@ -647,6 +689,7 @@ public class NewClickGUI extends GuiScreen {
                     offset += 23;
                 }
 
+                // COMBO
                 if (setting.isCombo()) {
                     float settingHeight = 17;
                     float rectHeight = 10;
@@ -654,7 +697,6 @@ public class NewClickGUI extends GuiScreen {
                     float margin = 4;
                     float minRectWidth = 30;
 
-                    // Dessiner le nom du setting
                     GlStateManager.pushMatrix();
                     GlStateManager.translate(x + 6, y + offset + settingHeight/2 - font.getFontHeight()*0.6f/2, 0);
                     GlStateManager.scale(0.6, 0.6, 0.6);
@@ -670,14 +712,33 @@ public class NewClickGUI extends GuiScreen {
                     float rectY = y + offset + (settingHeight - rectHeight) / 2;
 
                     boolean hovered = isHoveringSetting(mouseX, mouseY, rectX, rectY, rectWidth, rectHeight, setting);
-                    Color color = hovered ? Color.WHITE : new Color(227, 227, 227, 200);
-                    float alpha = hovered ? 0.7f : 0.4f;
+                    Color color = hovered ? new Color(227, 227, 227, 200) : Color.WHITE;
+                    float alpha = hovered ? 0.4f : 0.7f;
 
                     DrawHelper.drawRoundedRect(rectX, rectY + rectHeight, rectWidth, rectHeight, 4, new Color(28, 30, 31, 255));
 
                     float arrowX = rectX + margin - 2.5f;
                     float arrowY = (rectY + (rectHeight - arrowSize) / 2) - 2;
-                    settingsArrow.drawComboArrow(arrowX, arrowY, 15f, 15f, new ResourceLocation("textures/arrowd.png"), false, partialTicks, alpha);
+
+                    int alphaInt = (int) Math.min(255, alpha*255);
+
+                    int iconSize = 12;
+                    int centerX = (int)arrowX + 1 + iconSize / 2;
+                    int centerY = (int)arrowY + 1 + iconSize / 2;
+
+                    // Expanded rotation
+                    float rotateTarget = setting.isExpanded ? 90 : 0;
+                    float interpolatedRotation = setting.currentRotationArrow + (rotateTarget - setting.currentRotationArrow) * partialTicks * 0.1f;
+
+                    GlStateManager.pushMatrix();
+                    GlStateManager.translate(centerX + 1, centerY + 0.5f, 0);
+                    GlStateManager.rotate(interpolatedRotation, 0, 0, 1); // Rotation to make hover animations
+                    GlStateManager.translate(-iconSize / 2, -iconSize / 2, 0);
+                    RenderUtils.renderIcon(ARROW_IMAGE, iconSize, new Color(255, 255, 255, alphaInt), 0, 0);
+                    GlStateManager.popMatrix();
+
+                    // Expanded rotation set rotation
+                    setting.currentRotationArrow = interpolatedRotation;
 
                     float textX = rectX + arrowSize + margin * 2 - 3;
                     float textY = rectY + (rectHeight - font.getFontHeight() * 0.6f) / 2;
@@ -687,12 +748,87 @@ public class NewClickGUI extends GuiScreen {
                     font.drawString(currentValue, 0, 0, color.getRGB(), false);
                     GlStateManager.popMatrix();
 
+                    // If combo settings expanded
+                    if(setting.isExpanded){
+                        float ay = 5;
+                        for (String sld : setting.getOptions()) {
+                            String optionString = formatCategoryName(sld.toLowerCase());
+
+
+                            ay += font.getFontHeight()+0.5f;
+
+                            float optionTextWidth = font.getStringWidth(optionString) * 0.6f; // Scaled width
+                            float optionX = x + 100 + (width - 103 - optionTextWidth) / 2;
+                            float optionY = y + offset + ay + 3;
+
+                            Color optionColorText =  isHoveringOption(mouseX, mouseY, x + 100, y + offset + ay, width - 103, font.getFontHeight(), sld, setting) ? new Color(227, 227, 227, 200) : Color.WHITE;
+
+                            float targetOpacity = setting.getValString().equalsIgnoreCase(sld) ? 255f : 0f;
+
+                            float interpolatedOpacity = setting.selectedOpacity + (targetOpacity - setting.selectedOpacity) * partialTicks * 0.05f;
+
+                            Color optionColorSelected = new Color(ColorUtils.getClickGUIColor().darker().getRed(),
+                                                                    ColorUtils.getClickGUIColor().darker().getGreen(),
+                                                                    ColorUtils.getClickGUIColor().darker().getBlue(), Math.min(255, (int)interpolatedOpacity));
+
+                            DrawHelper.drawRoundedRect(x + 100.5f, y + offset + font.getFontHeight() + ay + 1, width - 104, font.getFontHeight() + 1, 2, new Color(32, 33, 38, 255));
+                            if(setting.getValString().equalsIgnoreCase(sld)){
+                                DrawHelper.drawRoundedRect(x + 100.5f, y + offset + font.getFontHeight() + ay + 1, width - 104, font.getFontHeight() + 1, 2, optionColorSelected);
+                                setting.selectedOpacity = interpolatedOpacity;
+                            }
+
+                            GlStateManager.pushMatrix();
+                            GlStateManager.translate(optionX, optionY, 0);
+                            GlStateManager.scale(0.6, 0.6, 0.6);
+                            font.drawString(optionString, 0, 0, optionColorText.getRGB(), true);
+                            GlStateManager.popMatrix();
+                        }
+
+                        DrawHelper.drawRoundedRectOutline(x + 100, y + offset + ay * 1.5f - 2,width - 103, ay - 4, 3,1.3f, new Color(63, 63, 69, 255));
+
+                        offset += ay - 10;
+                    }
+
                     // OFFSET
                     offset += settingHeight;
                 }
             }
             offset += 17; // Space between parameters
         }
+
+        drawSettingsScrollBar(mouseX, mouseY, partialTicks);
+    }
+
+    /*
+     * Draw settings scroll bar.
+     */
+    private void drawSettingsScrollBar(int mouseX, int mouseY, float partialTicks) {
+        // Fond de la barre de défilement
+        DrawHelper.drawRoundedRect(settingsScrollBarX, settingsScrollBarY + settingsScrollBarHeight, settingsScrollBarWidth, settingsScrollBarHeight, 1, new Color(66, 66, 66, 200));
+
+        // Barre de défilement
+        DrawHelper.drawRoundedRect(settingsScrollBarX, settingsScrollBarThumbY + settingsScrollBarThumbHeight, settingsScrollBarWidth, settingsScrollBarThumbHeight, 1, new Color(80, 80, 80, 255));
+
+        // Logique de glissement
+        if (isDraggingSettingsScrollBar) {
+            int mouseYRelative = mouseY - settingsScrollBarY;
+            float percentage = (float) mouseYRelative / settingsScrollBarHeight;
+            settingsTargetScrollAmount = percentage * settingsMaxScroll;
+            settingsTargetScrollAmount = MathHelper.clamp_float(settingsTargetScrollAmount, 0, settingsMaxScroll);
+        }
+
+        updateSettingsScrollBarThumb();
+    }
+
+    /*
+     * Update height scroll bar.
+     */
+    private void updateSettingsScrollBarThumb() {
+        float contentHeight = calculateTotalSettingsHeight(currentOpenModule);
+        float visibleRatio = Math.min(1, (BGHeight - 40) / contentHeight);
+        settingsScrollBarThumbHeight = Math.max(20, (int) (settingsScrollBarHeight * visibleRatio));
+        float scrollPercentage = settingsCurrentScrollAmount / settingsMaxScroll;
+        settingsScrollBarThumbY = settingsScrollBarY + (int) ((settingsScrollBarHeight - settingsScrollBarThumbHeight) * scrollPercentage);
     }
 
     /*
@@ -713,23 +849,22 @@ public class NewClickGUI extends GuiScreen {
         int alpha = Math.max(0, Math.min(255, (int) alphaAnimation.getAnimationValue()));
 
         if (selectedCategory.equals(category) || alpha > 0) {
-            Color glowColor = new Color(ColorUtil.getClickGUIColor().getRed(), ColorUtil.getClickGUIColor().getGreen(), ColorUtil.getClickGUIColor().getBlue(), alpha);
+            GlStateManager.enableBlend();
+            GlStateManager.disableAlpha();
+            GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+            GlStateManager.shadeModel(GL11.GL_SMOOTH);
+            Color glowColor = new Color(ColorUtils.getClickGUIColor().getRed(), ColorUtils.getClickGUIColor().getGreen(), ColorUtils.getClickGUIColor().getBlue(), alpha);
             DrawHelper.drawGlow(x, y + height, (int)width, (int)height, 5, glowColor);
             DrawHelper.drawRoundedRect(x, y + height, width, height, 3, new Color(28, 30, 31, alpha));
+            GlStateManager.shadeModel(GL11.GL_FLAT);
+            GlStateManager.disableBlend();
+            GlStateManager.enableAlpha();
         }
 
-        float iconSize = 9.6f;
         int iconX = (int) (x + 5);
-        int iconY = (int) (y + (height - iconSize) / 2);
+        int iconY = (int) (y + (height - 12) / 2);
 
         ResourceLocation iconCat = categoryIcon.get(category);
-
-        GlStateManager.pushMatrix();
-        GlStateManager.translate(iconX, iconY, 0);
-        GlStateManager.scale(0.15, 0.15, 0.15);
-        GlStateManager.translate(-iconX, -iconY, 0);
-        DrawHelper.drawRoundedTexture(iconCat, iconX, iconY+64, 64, 64, 1, new Color(168, 168, 168, 255));
-        GlStateManager.popMatrix();
 
         String text = "§l" + category.name().substring(0, 1).toUpperCase() + category.name().substring(1).toLowerCase();
 
@@ -740,6 +875,8 @@ public class NewClickGUI extends GuiScreen {
             }
             c = Color.WHITE;
         }
+
+        RenderUtils.renderIcon(iconCat, 12, new Color(179, 179, 179, 255), iconX, iconY);
 
         float textYZ = (y + (height - font.getFontHeight() * 0.6f) / 2);
         GlStateManager.pushMatrix();
@@ -775,6 +912,16 @@ public class NewClickGUI extends GuiScreen {
      */
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
+        // COMBO SETTINGS
+        if (currentOptionHovered != null && !currentOptionHovered.isEmpty()) {
+            Map.Entry<String, Setting> entry = currentOptionHovered.entrySet().iterator().next();
+            String option = entry.getKey();
+            Setting setting = entry.getValue();
+            setting.setValString(option);
+            setting.selectedOpacity = 0f;
+        }
+
+        // CLICK SETTINGS
         if(currentSettingHover != null){
             isSearchBoxFocused = false;
             if(currentSettingHover.isCheck()){
@@ -783,8 +930,14 @@ public class NewClickGUI extends GuiScreen {
             if(currentSettingHover.isSlider()){
                 currentSettingHover.dragging = true;
             }
+            if(currentSettingHover.isCombo()){
+                currentSettingHover.isExpanded = !currentSettingHover.isExpanded;
+            }
         }
-
+        // CLICK SCROLL BAR SETINGS
+        if (mouseButton == 0 && isMouseOverSettingsScrollBar(mouseX, mouseY)) {
+            isDraggingSettingsScrollBar = true;
+        }
         // CLICK SCROLL BAR
         if (mouseButton == 0 && isMouseOverScrollBar(mouseX, mouseY)) {
             isDraggingScrollBar = true;
@@ -813,8 +966,8 @@ public class NewClickGUI extends GuiScreen {
             // Reset search box state
             isSearchBoxFocused = false;
             isSearchBoxAnimating = false;
-            searchBoxWidth = 70; // Reset to initial width
-            searchBoxFocus = new LinearAnimation(searchBoxWidth, 70, 100, true);
+            //searchBoxWidth = 70; // Reset to initial width
+            //searchBoxFocus = new LinearAnimation(searchBoxWidth, 70, 100, true);
             settingsPanelAnim.reset();
         }
         // CLICK NOTHING
@@ -841,6 +994,9 @@ public class NewClickGUI extends GuiScreen {
         for(Setting set : DelClient.settingsManager.getSettings()){
             if(set.isSlider()) set.dragging = false;
         }
+        if (isDraggingSettingsScrollBar) {
+            isDraggingSettingsScrollBar = false;
+        }
         if (isDraggingScrollBar) {
             isDraggingScrollBar = false;
         } else {
@@ -854,13 +1010,14 @@ public class NewClickGUI extends GuiScreen {
     @Override
     protected void keyTyped(char typedChar, int keyCode) throws IOException {
         if (isSearchBoxFocused) {
+            if (keyCode == Keyboard.KEY_ESCAPE){
+                isSearchBoxFocused = false;
+            }
             if (keyCode == Keyboard.KEY_BACK && !searchText.isEmpty()) {
                 searchText = searchText.substring(0, searchText.length() - 1);
             } else if (ChatAllowedCharacters.isAllowedCharacter(typedChar)) {
                 searchText += typedChar;
             }
-            // La recherche a changé, donc on réinitialise lastSearchText
-            // pour déclencher le scroll au début au prochain drawScreen
             lastSearchText = "";
         } else {
             super.keyTyped(typedChar, keyCode);
@@ -953,6 +1110,23 @@ public class NewClickGUI extends GuiScreen {
         return hover;
     }
 
+    private boolean isHoveringOption(int mouseX, int mouseY, float x, float y, float width, float height, String option, Setting setting) {
+        boolean hover = mouseX >= x && mouseX <= x + width &&
+                mouseY >= y && mouseY <= y + height;
+
+        if (hover) {
+            // Créer une nouvelle HashMap avec l'option et le Setting
+            Map<String, Setting> optionInfo = new HashMap<>();
+            optionInfo.put(option, setting);
+
+            currentOptionHovered = optionInfo;
+        } else if (currentOptionHovered != null && currentOptionHovered.containsKey(option)) {
+            currentOptionHovered = null;
+        }
+
+        return hover;
+    }
+
     private boolean isHoveringCategory(int mouseX, int mouseY, float x, float y, float width, float height, Category category){
         boolean hover =  mouseX >= x && mouseX <= x + width &&
                 mouseY >= y && mouseY <= y + height;
@@ -962,6 +1136,11 @@ public class NewClickGUI extends GuiScreen {
             currentSettingHover = null;
         }
         return hover;
+    }
+
+    private boolean isMouseOverSettingsScrollBar(int mouseX, int mouseY) {
+        return mouseX >= settingsScrollBarX && mouseX <= settingsScrollBarX + settingsScrollBarWidth &&
+                mouseY >= settingsScrollBarY && mouseY <= settingsScrollBarY + settingsScrollBarHeight;
     }
 
     // -------------------------------------------- Easing --------------------------------------------
@@ -985,3 +1164,4 @@ public class NewClickGUI extends GuiScreen {
     }
 
 }
+

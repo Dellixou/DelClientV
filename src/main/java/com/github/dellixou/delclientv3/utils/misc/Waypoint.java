@@ -1,5 +1,7 @@
 package com.github.dellixou.delclientv3.utils.misc;
 
+import com.github.dellixou.delclientv3.utils.enums.RouteItem;
+
 public class Waypoint {
 
     private double x;

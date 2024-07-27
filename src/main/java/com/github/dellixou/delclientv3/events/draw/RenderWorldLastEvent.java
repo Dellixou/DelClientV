@@ -2,17 +2,13 @@ package com.github.dellixou.delclientv3.events.draw;
 
 import com.github.dellixou.delclientv3.modules.core.ModuleManager;
 import com.github.dellixou.delclientv3.modules.movements.UserRoute;
+import com.github.dellixou.delclientv3.utils.RenderUtils;
 import com.github.dellixou.delclientv3.utils.misc.Route;
-import com.github.dellixou.delclientv3.utils.misc.RouteItem;
+import com.github.dellixou.delclientv3.utils.enums.RouteItem;
 import com.github.dellixou.delclientv3.utils.misc.Waypoint;
-import com.github.dellixou.delclientv3.utils.renderer.RenderUtils;
-import com.github.dellixou.delclientv3.utils.renderer.WorldTextRenderer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.BlockPos;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-
-import java.awt.*;
 
 public class RenderWorldLastEvent {
 
@@ -31,7 +27,7 @@ public class RenderWorldLastEvent {
             for(Route route : userRoute.routes){
                 if(route.getWaypoints().size() <= 0){ continue; }
 
-                WorldTextRenderer.renderTextInWorld(Minecraft.getMinecraft(), route.getName(), route.getWaypoints().get(0).getX(), route.getWaypoints().get(0).getY() + 3, route.getWaypoints().get(0).getZ(), event.partialTicks, 0.01F, true);//0.031F)
+                RenderUtils.renderTextInWorld(Minecraft.getMinecraft(), route.getName(), route.getWaypoints().get(0).getX(), route.getWaypoints().get(0).getY() + 3, route.getWaypoints().get(0).getZ(), event.partialTicks, 0.01F, true);//0.031F)
                 if(route.getIndeWaypoints().size() <= 0){ continue; }
                 for(Waypoint waypoint : route.getIndeWaypoints()){
                     String text = "";
@@ -59,7 +55,7 @@ public class RenderWorldLastEvent {
                     double x = waypoint.getX();
                     double y = waypoint.getY();
                     double z = waypoint.getZ();
-                    WorldTextRenderer.renderTextInWorld(Minecraft.getMinecraft(), text, x, y + 2, z, event.partialTicks, 0.01F, false);
+                    RenderUtils.renderTextInWorld(Minecraft.getMinecraft(), text, x, y + 2, z, event.partialTicks, 0.01F, false);
                 }
             }
     }

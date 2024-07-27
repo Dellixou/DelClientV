@@ -14,6 +14,9 @@ public class OpenLeapMenuEvent {
 
     public String playerToLeap = null;
 
+    /*
+     * Trigger opening leap menu and click.
+     */
     @SubscribeEvent
     public void onLeapMenu(GuiOpenEvent event) {
         if(event.gui != null){

@@ -4,12 +4,11 @@ import com.github.dellixou.delclientv3.DelClient;
 import com.github.dellixou.delclientv3.modules.floor7.AutoLeaps;
 import com.github.dellixou.delclientv3.modules.floor7.AutoPre4;
 import com.github.dellixou.delclientv3.modules.macro.*;
-import com.github.dellixou.delclientv3.modules.misc.AutoGFS;
-import com.github.dellixou.delclientv3.modules.misc.TestingSettings;
+import com.github.dellixou.delclientv3.modules.misc.RemoteControl;
+import com.github.dellixou.delclientv3.modules.player.AutoGFS;
 import com.github.dellixou.delclientv3.modules.movements.AutoSprint;
 import com.github.dellixou.delclientv3.modules.movements.AutoWalk;
 import com.github.dellixou.delclientv3.modules.movements.UserRoute;
-import com.github.dellixou.delclientv3.modules.movements.Velocity;
 import com.github.dellixou.delclientv3.modules.render.ClickGui;
 import com.github.dellixou.delclientv3.modules.render.FOVChanger;
 import com.github.dellixou.delclientv3.modules.render.HighlightBlock;
@@ -32,13 +31,10 @@ public class ModuleManager {
         // MOVEMENTS
         newMod(new UserRoute());
         newMod(new AutoSprint());
-        newMod(new AutoWalk());
-        //newMod(new AutoP3());
-        //newMod(new Velocity());
-        //newMod(new ResetVelocity());
+        //newMod(new AutoWalk());
         // RENDER
-        newMod(new FOVChanger());
         newMod(new ClickGui());
+        newMod(new FOVChanger());
         newMod(new ModuleList());
         newMod(new HighlightBlock());
         // FLOOR 7
@@ -47,12 +43,10 @@ public class ModuleManager {
         // MACRO
         newMod(new AutoFish());
         newMod(new AutoForaging());
-        newMod(new AutoForagingV2());
-        //newMod(new AutoPowder());
-        //newMod(new AutoPowderV2());
-        // MISC
+        // PLAYER
         newMod(new AutoGFS());
-        newMod(new TestingSettings());
+        // MISC
+        newMod(new RemoteControl());
     }
 
     public static void newMod(Module m){
@@ -79,12 +73,7 @@ public class ModuleManager {
     public static void onKey(int k){
         for (Module m : mods){
             if(m.getKey() == k){
-                if(DelClient.instance.getIsAuthorized()){
-                    m.toggle();
-                }
-                else{
-                    Minecraft.getMinecraft().crashed(new CrashReport("Access denied to DelClient", null));
-                }
+                m.toggle();
             }
         }
     }

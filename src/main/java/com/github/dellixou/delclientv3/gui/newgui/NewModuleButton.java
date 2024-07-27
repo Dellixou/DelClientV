@@ -1,22 +1,14 @@
 package com.github.dellixou.delclientv3.gui.newgui;
 
 import com.github.dellixou.delclientv3.DelClient;
-import com.github.dellixou.delclientv3.gui.clickgui.Panel;
-import com.github.dellixou.delclientv3.gui.clickgui.elements.Element;
-import com.github.dellixou.delclientv3.gui.clickgui.elements.menu.ElementCheckBox;
-import com.github.dellixou.delclientv3.gui.clickgui.elements.menu.ElementComboBox;
-import com.github.dellixou.delclientv3.gui.clickgui.elements.menu.ElementSlider;
-import com.github.dellixou.delclientv3.gui.clickgui.elements.menu.ElementWriteBox;
-import com.github.dellixou.delclientv3.gui.clickgui.util.ColorUtil;
-import com.github.dellixou.delclientv3.gui.newgui.settings.NewElement;
-import com.github.dellixou.delclientv3.gui.newgui.settings.NewElementCheckBox;
-import com.github.dellixou.delclientv3.gui.settings.Setting;
+import com.github.dellixou.delclientv3.gui.oldgui.Panel;
+import com.github.dellixou.delclientv3.modules.core.settings.Setting;
 import com.github.dellixou.delclientv3.modules.core.Module;
-import com.github.dellixou.delclientv3.utils.Color.AnimatedColor;
-import com.github.dellixou.delclientv3.utils.Color.ColorUtils;
+import com.github.dellixou.delclientv3.utils.ColorUtils;
+import com.github.dellixou.delclientv3.utils.gui.animations.AnimatedColor;
 import com.github.dellixou.delclientv3.utils.gui.animations.LinearAnimation;
 import com.github.dellixou.delclientv3.utils.gui.glyph.GlyphPageFontRenderer;
-import com.github.dellixou.delclientv3.utils.gui.misc.DrawHelper;
+import com.github.dellixou.delclientv3.utils.gui.shaders.misc.DrawHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.renderer.GlStateManager;
@@ -24,7 +16,8 @@ import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
-import java.util.ArrayList;
+
+import static org.lwjgl.opengl.GL11.glColor4f;
 
 public class NewModuleButton {
 
@@ -42,7 +35,7 @@ public class NewModuleButton {
     private LinearAnimation checkBoxClickAnim;
     private LinearAnimation rotationSetAnimation;
     private final AnimatedColor buttonColor = new AnimatedColor(baseColor, hoverColor, 200, false);
-    private final AnimatedColor checkBoxColor = new AnimatedColor(new Color(64, 64, 64, 255), ColorUtil.getClickGUIColor(), 200, true);
+    private final AnimatedColor checkBoxColor = new AnimatedColor(new Color(64, 64, 64, 255), ColorUtils.getClickGUIColor(), 200, true);
 
     // Module info
     public Module mod;
@@ -110,6 +103,9 @@ public class NewModuleButton {
         Color checkColor = checkBoxColor.update(isToggle);
         Color currentColor = buttonColor.update(isHovered);
 
+        Color glowColor = isHovered ? ColorUtils.getClickGUIColor() : currentColor.brighter();
+
+        DrawHelper.drawGlow(x, y + height, (int) width, (int) height, 5, glowColor);
         DrawHelper.drawRoundedRect(x, y + height, width, height, 3, currentColor);
 
         // Text module name
@@ -170,22 +166,28 @@ public class NewModuleButton {
             Color c = isSettingHovering ? new Color(255, 255, 255, 176) : new Color(215, 215, 215, 176);
 
             // Draw the rotated and scaled texture
-            drawRotatedScaledTexture(new ResourceLocation("textures/settings.png"), centerX, centerY, 32, 32, 0.3f, rotation, c);
+            drawRotatedScaledTexture(clickGUI.SETTINGS_IMAGE, centerX, centerY, 32, 32, rotation, c);
         }
     }
 
     // Add this method to your class
-    private void drawRotatedScaledTexture(ResourceLocation resource, float centerX, float centerY, int width, int height, float scale, float rotation, Color color) {
+    private void drawRotatedScaledTexture(ResourceLocation resource, float centerX, float centerY, int width, int height, float rotation, Color color) {
+        float iconWidth = 11;
+        float iconHeight = 11;
+        float iconX = centerX - (iconWidth / 2);
+        float iconY = centerY - (iconHeight / 2);
+
         GlStateManager.pushMatrix();
-        GlStateManager.translate(centerX, centerY, 0);
-        GlStateManager.rotate(rotation, 0, 0, 1);
-        GlStateManager.scale(scale, scale, scale);
-        GlStateManager.translate(-width / 2f, -height / 2f, 0);
-        GlStateManager.color(color.getRed() / 255f, color.getGreen() / 255f, color.getBlue() / 255f, color.getAlpha() / 255f);
         GlStateManager.enableBlend();
-        GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+        GlStateManager.translate(iconX + (iconWidth / 2), iconY + (iconHeight / 2), 0);
+        GlStateManager.rotate(rotation, 0, 0, 1);
+        GlStateManager.translate(-(iconWidth / 2), -(iconHeight / 2), 0);
+
+        GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+        glColor4f(color.getRed() / 255f, color.getGreen() / 255f, color.getBlue() / 255f, color.getAlpha() / 255f);
         Minecraft.getMinecraft().getTextureManager().bindTexture(resource);
-        Gui.drawModalRectWithCustomSizedTexture(0, 0, 0, 0, width, height, width, height);
+        Gui.drawModalRectWithCustomSizedTexture(0, 0, 0, 0, (int)iconWidth, (int)iconHeight, iconWidth, iconHeight);
+
         GlStateManager.disableBlend();
         GlStateManager.popMatrix();
     }

@@ -1,13 +1,14 @@
 package com.github.dellixou.delclientv3.modules.movements;
 
 import com.github.dellixou.delclientv3.DelClient;
-import com.github.dellixou.delclientv3.gui.clickgui.elements.ModuleButton;
-import com.github.dellixou.delclientv3.gui.settings.Setting;
+import com.github.dellixou.delclientv3.gui.oldgui.elements.ModuleButton;
+import com.github.dellixou.delclientv3.modules.core.settings.Setting;
 import com.github.dellixou.delclientv3.modules.core.Category;
 import com.github.dellixou.delclientv3.modules.core.Module;
 import com.github.dellixou.delclientv3.utils.misc.Route;
-import com.github.dellixou.delclientv3.utils.misc.RouteItem;
+import com.github.dellixou.delclientv3.utils.enums.RouteItem;
 import com.github.dellixou.delclientv3.utils.misc.Waypoint;
+import com.github.dellixou.delclientv3.utils.movements.MovementUtils;
 import com.github.dellixou.delclientv3.utils.movements.PlayerMove;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.KeyBinding;
@@ -41,16 +42,16 @@ public class UserRoute extends Module{
     @Override
     public void setup(){
         DelClient.settingsManager.rSetting(new Setting("Tolerance", this, 5, 1, 30, true, "user_route_tol", "tolerance"));
-        DelClient.settingsManager.rSetting(new Setting("Jump T", this, 5, 1, 30, true, "user_route_jump_tol", "tolerance"));
-        DelClient.settingsManager.rSetting(new Setting("Wait T", this, 5, 1, 30, true, "user_route_wait_tol", "tolerance"));
-        DelClient.settingsManager.rSetting(new Setting("Look Delay", this, 100, 5, 1500, true, "user_route_look_delay", "look"));
-        DelClient.settingsManager.rSetting(new Setting("Click Tol", this, 25, 1, 100, true, "user_route_click_tol", "tolerance"));
-        DelClient.settingsManager.rSetting(new Setting("Line Width", this, 10, 10, 100, true, "user_route_width", "visual"));
-        DelClient.settingsManager.rSetting(new Setting("Route Toggle", this, 3, 1, 10, true, "user_route_toggle", "global"));
-        DelClient.settingsManager.rSetting(new Setting("Camera T", this, 3, 1, 100, true, "user_route_camera_tick", "camera"));
-        DelClient.settingsManager.rSetting(new Setting("Rot Instant", this, false, "user_route_rot_instant", "camera"));
-        DelClient.settingsManager.rSetting(new Setting("Render Dist", this, 50, 2, 150, true, "user_route_render_distance", "visual"));
-        DelClient.settingsManager.rSetting(new Setting("Through Wall", this, true, "user_route_render_wall", "visual"));
+        DelClient.settingsManager.rSetting(new Setting("Jump tolerance", this, 5, 1, 30, true, "user_route_jump_tol", "tolerance"));
+        DelClient.settingsManager.rSetting(new Setting("Wait tolerance", this, 5, 1, 30, true, "user_route_wait_tol", "tolerance"));
+        DelClient.settingsManager.rSetting(new Setting("Look delay", this, 100, 5, 1500, true, "user_route_look_delay", "look"));
+        DelClient.settingsManager.rSetting(new Setting("Click tolerance", this, 25, 1, 100, true, "user_route_click_tol", "tolerance"));
+        DelClient.settingsManager.rSetting(new Setting("Line width", this, 10, 10, 100, true, "user_route_width", "visual"));
+        DelClient.settingsManager.rSetting(new Setting("Route toggle", this, 3, 1, 10, true, "user_route_toggle", "global"));
+        DelClient.settingsManager.rSetting(new Setting("Camera tick", this, 3, 1, 100, true, "user_route_camera_tick", "camera"));
+        DelClient.settingsManager.rSetting(new Setting("Rot instant", this, false, "user_route_rot_instant", "camera"));
+        DelClient.settingsManager.rSetting(new Setting("Render dist", this, 50, 2, 150, true, "user_route_render_distance", "visual"));
+        DelClient.settingsManager.rSetting(new Setting("Through wall", this, true, "user_route_render_wall", "visual"));
     }
 
     // Fields for managing routes and movement
@@ -219,11 +220,17 @@ public class UserRoute extends Module{
                     double height = Math.abs(deltaY);
 
                     if (distance < toggleTolerance && mc.thePlayer.onGround && height < 2 && height > -2) {
-                        for(Waypoint waypoint : route.getWaypoints()){
-                            waypoint.setDone(false);
-                        }
-                        currentRoute = route;
-                        currentRoute.getWaypoints().get(0).setDone(true);
+                        mc.thePlayer.setPosition(route.getWaypoints().get(0).getX()+0.5f, mc.thePlayer.posY, route.getWaypoints().get(0).getZ()+0.5f);
+                        new Thread(() -> {
+                            try{
+                                Thread.sleep(100);
+                                for(Waypoint waypoint : route.getWaypoints()){
+                                    waypoint.setDone(false);
+                                }
+                                currentRoute = route;
+                                currentRoute.getWaypoints().get(0).setDone(true);
+                            }catch (Exception ignored) { }
+                        }).start();
                     }
                 }
             }

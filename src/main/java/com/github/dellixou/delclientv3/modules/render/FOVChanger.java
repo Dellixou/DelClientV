@@ -1,7 +1,7 @@
 package com.github.dellixou.delclientv3.modules.render;
 
 import com.github.dellixou.delclientv3.DelClient;
-import com.github.dellixou.delclientv3.gui.settings.Setting;
+import com.github.dellixou.delclientv3.modules.core.settings.Setting;
 import com.github.dellixou.delclientv3.modules.core.Category;
 import com.github.dellixou.delclientv3.modules.core.Module;
 import org.lwjgl.input.Keyboard;
@@ -18,7 +18,7 @@ public class FOVChanger extends Module{
 
     @Override
     public void setup(){
-        DelClient.settingsManager.rSetting(new Setting("FOV", this, 130, 1, 179, true, "fov_changer_value", "global"));
+        DelClient.settingsManager.rSetting(new Setting("Field of view", this, 130, 1, 179, true, "fov_changer_value", "global"));
     }
 
     public void onUpdate(){

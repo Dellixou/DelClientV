@@ -1,7 +1,5 @@
 package com.github.dellixou.delclientv3.utils.misc;
 
-import com.github.dellixou.delclientv3.utils.Reference;
-
 import javax.net.ssl.*;
 import java.io.BufferedReader;
 import java.io.IOException;

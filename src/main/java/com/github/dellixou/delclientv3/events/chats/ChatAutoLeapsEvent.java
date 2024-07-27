@@ -3,8 +3,8 @@ package com.github.dellixou.delclientv3.events.chats;
 import com.github.dellixou.delclientv3.DelClient;
 import com.github.dellixou.delclientv3.events.ticks.TickAutoLeapsEvent;
 import com.github.dellixou.delclientv3.modules.floor7.AutoLeaps;
-import com.github.dellixou.delclientv3.utils.misc.dungeon.DungeonClass;
-import com.github.dellixou.delclientv3.utils.misc.dungeon.DungeonLeap;
+import com.github.dellixou.delclientv3.utils.DungeonUtils;
+import com.github.dellixou.delclientv3.utils.enums.DungeonClass;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -25,7 +25,7 @@ public class ChatAutoLeapsEvent {
         goldorMessageNW.add("[BOSS] Goldor: I will replace that gate with a stronger one!");
     }
 
-    /**
+    /*
      * Chat Received Event
      */
     @SubscribeEvent
@@ -50,7 +50,7 @@ public class ChatAutoLeapsEvent {
                 String[] parts = ee2Value.split("/");
                 // Get the part before the '/'
                 String className = parts[0];
-                DungeonLeap.leapToWithClass(DungeonClass.valueOf(className));
+                DungeonUtils.leapToWithClass(DungeonClass.valueOf(className));
             }
 
             if(autoLeaps.currentStage == 2 && DelClient.settingsManager.getSettingById("auto_leap_ee3_b").getValBoolean()){
@@ -59,7 +59,7 @@ public class ChatAutoLeapsEvent {
                 String[] parts = ee3Value.split("/");
                 // Get the part before the '/'
                 String className = parts[0];
-                DungeonLeap.leapToWithClass(DungeonClass.valueOf(className));
+                DungeonUtils.leapToWithClass(DungeonClass.valueOf(className));
             }
 
             if(autoLeaps.currentStage == 3 && DelClient.settingsManager.getSettingById("auto_leap_sling_b").getValBoolean()){
@@ -68,14 +68,14 @@ public class ChatAutoLeapsEvent {
                 String[] parts = slingValue.split("/");
                 // Get the part before the '/'
                 String className = parts[0];
-                DungeonLeap.leapToWithClass(DungeonClass.valueOf(className));
+                DungeonUtils.leapToWithClass(DungeonClass.valueOf(className));
             }
 
             autoLeaps.currentStage += 1;
         }
     }
 
-    /**
+    /*
      * Stop all events
      */
     public void stopListen(){

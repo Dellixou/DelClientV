@@ -2,7 +2,7 @@ package com.github.dellixou.delclientv3.modules.floor7;
 
 import com.github.dellixou.delclientv3.DelClient;
 import com.github.dellixou.delclientv3.events.chats.ChatAutoPre4Event;
-import com.github.dellixou.delclientv3.gui.settings.Setting;
+import com.github.dellixou.delclientv3.modules.core.settings.Setting;
 import com.github.dellixou.delclientv3.modules.core.Category;
 import com.github.dellixou.delclientv3.modules.core.Module;
 import net.minecraft.init.Items;
@@ -16,7 +16,7 @@ public class AutoPre4 extends Module {
      * Constructor to initialize the AutoPre4 module.
      */
     public AutoPre4() {
-        super("Auto Pre 4", Keyboard.KEY_0, Category.FLOOR7, true, "auto_pre4");
+        super("Auto Pre 4 (W.I.P)", Keyboard.KEY_0, Category.FLOOR7, true, "auto_pre4");
     }
 
     // Fields for managing AutoPre4
@@ -27,7 +27,7 @@ public class AutoPre4 extends Module {
      */
     public void setup(){
         DelClient.settingsManager.rSetting(new Setting("Smooth", this, false, "auto_pre4_smooth", "mode"));
-        DelClient.settingsManager.rSetting(new Setting("Legit Mode", this, false, "auto_pre4_legit", "mode"));
+        DelClient.settingsManager.rSetting(new Setting("Legit mode", this, false, "auto_pre4_legit", "mode"));
     }
 
     /**
