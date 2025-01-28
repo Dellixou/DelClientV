@@ -2,6 +2,7 @@ package com.github.dellixou.delclientv3.gui.newgui;
 
 import com.github.dellixou.delclientv3.DelClient;
 import com.github.dellixou.delclientv3.gui.oldgui.util.FontUtil;
+import com.github.dellixou.delclientv3.modules.core.settings.SettingsManager;
 import com.github.dellixou.delclientv3.utils.RenderUtils;
 import com.github.dellixou.delclientv3.utils.gui.ImageProcessor;
 import com.github.dellixou.delclientv3.utils.gui.SettingsArrow;
@@ -593,9 +594,8 @@ public class NewClickGUI extends GuiScreen {
             for (Setting cat : categorySettings){
                 if(cat.isCheck()) categoryHeight += 17;
                 if(cat.isSlider()) categoryHeight += 23;
-                if(cat.isCombo()){
-                    categoryHeight += 17;
-                }
+                if(cat.isCombo()) categoryHeight += 17;
+                if(cat.isText()) categoryHeight += 31;
             }
 
             // Draw the backgrounds for each categories
@@ -784,13 +784,40 @@ public class NewClickGUI extends GuiScreen {
                             GlStateManager.popMatrix();
                         }
 
-                        DrawHelper.drawRoundedRectOutline(x + 100, y + offset + ay * 1.5f - 2,width - 103, ay - 4, 3,1.3f, new Color(63, 63, 69, 255));
+                        DrawHelper.drawRoundedRectOutline(x + 100, y + offset + ay + 1 + font.getFontHeight(),width - 103, ay - 4, 3,1.3f, new Color(63, 63, 69, 255));
 
                         offset += ay - 10;
                     }
 
                     // OFFSET
                     offset += settingHeight;
+                }
+
+                // TEXT
+                if (setting.isText()) {
+                    GlStateManager.pushMatrix();
+                    GlStateManager.translate(x + 6, y + offset + font.getFontHeight()/2*0.6, 0);
+                    GlStateManager.scale(0.6, 0.6, 0.6);
+                    font.drawString(setting.getName(), 0, 0, new Color(227, 227, 227, 200).getRGB(), false);
+                    GlStateManager.popMatrix();
+
+                    // Background
+                    Color hoveredColor = isHoveringSetting(mouseX, mouseY, x+6, y+offset+16f, width-12, 14, setting) ? new Color(255, 255, 255, 200) : new Color(227, 227, 227, 200);
+                    Color focusColor = setting.isFocused ? new Color(0x404040) : new Color(0x232323);
+                    DrawHelper.drawRoundedRect(x + 6, y + offset + 16f + 12, width-12, 14, 1, focusColor);
+
+                    GlStateManager.pushMatrix();
+                    GlStateManager.translate(x + 7, y + offset + font.getFontHeight()/2*0.6 + 13, 0);
+                    GlStateManager.scale(0.6, 0.6, 0.6);
+                    font.drawString(setting.getValString(), 0, 0, hoveredColor.getRGB(), false);
+                    GlStateManager.popMatrix();
+
+                    if (setting.isFocused && System.currentTimeMillis() % 1000 > 500) {
+                        DrawHelper.drawRoundedRect(x + 8 + font.getStringWidth(setting.getValString())*0.6f + 1, y + offset + 16 + 10, 1, 14 - 10 + 5, 1, Color.WHITE);
+                    }
+
+                    // OFFSET
+                    offset += 30;
                 }
             }
             offset += 17; // Space between parameters
@@ -912,6 +939,11 @@ public class NewClickGUI extends GuiScreen {
      */
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
+        for(Setting setting : DelClient.settingsManager.getSettings()){
+            if(setting.isText()){
+                setting.isFocused = false;
+            }
+        }
         // COMBO SETTINGS
         if (currentOptionHovered != null && !currentOptionHovered.isEmpty()) {
             Map.Entry<String, Setting> entry = currentOptionHovered.entrySet().iterator().next();
@@ -932,6 +964,9 @@ public class NewClickGUI extends GuiScreen {
             }
             if(currentSettingHover.isCombo()){
                 currentSettingHover.isExpanded = !currentSettingHover.isExpanded;
+            }
+            if(currentSettingHover.isText()){
+                currentSettingHover.isFocused = !currentSettingHover.isFocused;
             }
         }
         // CLICK SCROLL BAR SETINGS
@@ -1009,6 +1044,19 @@ public class NewClickGUI extends GuiScreen {
      */
     @Override
     protected void keyTyped(char typedChar, int keyCode) throws IOException {
+        for (Setting setting : DelClient.settingsManager.getSettings()){
+            if(setting.isText() && setting.isFocused){
+                if (keyCode == Keyboard.KEY_ESCAPE){
+                    setting.isFocused = false;
+                }
+                if (keyCode == Keyboard.KEY_BACK && !setting.getValString().isEmpty()) {
+                    setting.setValString(setting.getValString().substring(0, setting.getValString().length() - 1));
+                } else if (ChatAllowedCharacters.isAllowedCharacter(typedChar)) {
+                    setting.setValString(setting.getValString() + typedChar);
+                }
+            }
+        }
+
         if (isSearchBoxFocused) {
             if (keyCode == Keyboard.KEY_ESCAPE){
                 isSearchBoxFocused = false;

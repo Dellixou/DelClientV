@@ -1,10 +1,7 @@
 package com.github.dellixou.delclientv3.modules.misc;
 
-import com.github.dellixou.delclientv3.events.ticks.TickAutoGFSEvent;
 import com.github.dellixou.delclientv3.modules.core.Category;
 import com.github.dellixou.delclientv3.modules.core.Module;
-import net.minecraft.client.Minecraft;
-import net.minecraftforge.common.MinecraftForge;
 import org.lwjgl.input.Keyboard;
 
 public class RemoteControl extends Module {

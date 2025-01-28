@@ -9,10 +9,7 @@ import com.github.dellixou.delclientv3.modules.render.ClickGui;
 import com.github.dellixou.delclientv3.utils.enums.RouteItem;
 import com.github.dellixou.delclientv3.utils.misc.*;
 import com.google.common.collect.Sets;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 
 import java.io.*;
 import java.util.HashSet;
@@ -23,8 +20,10 @@ public class FileUtils {
     // Directory files
     public static File ROOT_DIR = new File("delclient");
     public static File ROUTES_DIR = new File("delclient/routes");
+    public static File REMOTE_DIR = new File("delclient/remote");
     public static File modules = new File(ROOT_DIR, "modules.json");
-    private static UUIDVerifier uuidVerifier = new UUIDVerifier();
+    public static File remote_config = new File(REMOTE_DIR, "remote_config.json");
+    public static File dashboard_msg = new File(REMOTE_DIR, "dashboard_messages.json");
 
     /**
      * Initialize directories and handle modules
@@ -37,10 +36,17 @@ public class FileUtils {
         if (!ROUTES_DIR.exists()) {
             ROUTES_DIR.mkdirs();
         }
+        if (!REMOTE_DIR.exists()) {
+            REMOTE_DIR.mkdirs();
+        }
 
         // Handles Module
         if (!modules.exists()) {
             saveMods();
+        }
+
+        if (!remote_config.exists()) {
+            saveRemoteConfig();
         }
 
         //loadRoutes();
@@ -173,9 +179,9 @@ public class FileUtils {
     // Routes
     // -------------------------------------------------------------------------------------------------
 
-    /**
+    /*
      * Save Routes Config
-     **/
+     */
     public void saveRoutes() {
         try {
             UserRoute userRoute = (UserRoute) ModuleManager.getModuleById("user_route");
@@ -220,9 +226,9 @@ public class FileUtils {
         }
     }
 
-    /**
+    /*
      * Load Routes Config
-     **/
+     */
     public void loadRoutes() {
         try {
             UserRoute userRoute = (UserRoute) ModuleManager.getModuleById("user_route");
@@ -293,6 +299,185 @@ public class FileUtils {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    // -------------------------------------------------------------------------------------------------
+    // Remote Control
+    // -------------------------------------------------------------------------------------------------
+
+    /*
+     * Save Remote Config
+     */
+    public void saveRemoteConfig() {
+        try {
+            JsonObject json = new JsonObject();
+
+            JsonObject jsonMod = new JsonObject();
+            jsonMod.addProperty("bot_token", "null");
+            jsonMod.addProperty("owner_id", "null");
+
+            json.add("remote_config", jsonMod);
+
+            try (PrintWriter save = new PrintWriter(new FileWriter(remote_config))) {
+                save.println(new GsonBuilder().setPrettyPrinting().create().toJson(json));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /*
+     * Get Remote Token
+     */
+    public String getRemoteToken() {
+        try {
+            BufferedReader load = new BufferedReader(new FileReader(remote_config));
+            JsonParser parser = new JsonParser();
+            JsonObject json = parser.parse(load).getAsJsonObject();
+            load.close();
+
+            for (Map.Entry<String, JsonElement> entry : json.entrySet()) {
+                if(entry.getKey().equals("remote_config")){
+                    JsonObject jsonConfig = entry.getValue().getAsJsonObject();
+                    return jsonConfig.get("bot_token").getAsString();
+                }
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "null";
+    }
+
+    /*
+     * Get Remote Token
+     */
+    public String getRemoteOwnerID() {
+        try {
+            BufferedReader load = new BufferedReader(new FileReader(remote_config));
+            JsonParser parser = new JsonParser();
+            JsonObject json = parser.parse(load).getAsJsonObject();
+            load.close();
+
+            for (Map.Entry<String, JsonElement> entry : json.entrySet()) {
+                if(entry.getKey().equals("remote_config")){
+                    JsonObject jsonConfig = entry.getValue().getAsJsonObject();
+                    return jsonConfig.get("owner_id").getAsString();
+                }
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "null";
+    }
+
+    /*
+     * Set Remote Token
+     */
+    public void setRemoteToken(String newToken) {
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(remote_config));
+            JsonParser parser = new JsonParser();
+            JsonObject json = parser.parse(reader).getAsJsonObject();
+            reader.close();
+
+            if (json.has("remote_config")) {
+                JsonObject remoteConfig = json.getAsJsonObject("remote_config");
+                remoteConfig.addProperty("bot_token", newToken);
+            }
+
+            try (FileWriter writer = new FileWriter(remote_config)) {
+                new Gson().toJson(json, writer);
+            }
+
+            System.out.println("Token updated successfully.");
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("Error updating token: " + e.getMessage());
+        }
+    }
+
+    /*
+     * Set Remote Owner ID
+     */
+    public void setRemoteOwnerID(String newOwnerID) {
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(remote_config));
+            JsonParser parser = new JsonParser();
+            JsonObject json = parser.parse(reader).getAsJsonObject();
+            reader.close();
+
+            if (json.has("remote_config")) {
+                JsonObject remoteConfig = json.getAsJsonObject("remote_config");
+                remoteConfig.addProperty("owner_id", newOwnerID);
+            }
+
+            try (FileWriter writer = new FileWriter(remote_config)) {
+                new Gson().toJson(json, writer);
+            }
+
+            System.out.println("Owner ID updated successfully.");
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("Error updating owner ID: " + e.getMessage());
+        }
+    }
+
+    public void saveDashboardMessage(String messageId, String channelId) {
+        try {
+            JsonObject json;
+            if (dashboard_msg.exists()) {
+                BufferedReader load = new BufferedReader(new FileReader(dashboard_msg));
+                JsonParser parser = new JsonParser();
+                json = parser.parse(load).getAsJsonObject();
+                load.close();
+            } else {
+                json = new JsonObject();
+            }
+
+            JsonArray messages;
+            if (json.has("messages")) {
+                messages = json.getAsJsonArray("messages");
+            } else {
+                messages = new JsonArray();
+            }
+
+            JsonObject messageObject = new JsonObject();
+            messageObject.addProperty("messageId", messageId);
+            messageObject.addProperty("channelId", channelId);
+            messages.add(messageObject);
+
+            json.add("messages", messages);
+
+            try (PrintWriter save = new PrintWriter(new FileWriter(dashboard_msg))) {
+                save.println(JsonUtils.prettyGson.toJson(json));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void clearDashboardMessages() {
+        if (dashboard_msg.exists()) {
+            dashboard_msg.delete();
+        }
+    }
+
+    public JsonArray getDashboardMessages() {
+        if (dashboard_msg.exists()) {
+            try {
+                BufferedReader load = new BufferedReader(new FileReader(dashboard_msg));
+                JsonParser parser = new JsonParser();
+                JsonObject json = parser.parse(load).getAsJsonObject();
+                load.close();
+                return json.getAsJsonArray("messages");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return new JsonArray();
     }
 }
 

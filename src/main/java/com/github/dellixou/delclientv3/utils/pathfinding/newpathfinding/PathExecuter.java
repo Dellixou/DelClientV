@@ -40,6 +40,7 @@ public class PathExecuter {
     int offsetYaw = 20;
     Vec3 goal;
     BlockPos blockToSee;
+    Runnable callback;
 
     private boolean justStarted = true;
 
@@ -53,7 +54,7 @@ public class PathExecuter {
     /*
      * Start the walking to the goal.
      */
-    public void begin(Stack<Node> path, float tolerance, float finalReach, float lookDelay, BlockPos goal, int offsetYaw, BlockPos blockToSee) {
+    public void begin(Stack<Node> path, float tolerance, float finalReach, float lookDelay, BlockPos goal, int offsetYaw, BlockPos blockToSee, Runnable callback) {
         this.currentPath = path;
         this.tolerance = tolerance;
         this.finalReach = finalReach;
@@ -61,6 +62,7 @@ public class PathExecuter {
         this.offsetYaw = offsetYaw;
         this.blockToSee = blockToSee;
         this.goal = MathUtils.blockPosToVec3(goal);
+        this.callback = callback;
 
         if (currentPath.isEmpty()) {
             return;
@@ -143,6 +145,10 @@ public class PathExecuter {
 
         // Enough distance for attack block
         if(MathUtils.calculateDistanceXYZ(mc.thePlayer.getPositionVector(), goal) <= finalReach){
+            if(callback != null){
+                callback.run();
+                callback = null;
+            }
             this.stop();
         }
     }

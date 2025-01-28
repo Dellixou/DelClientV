@@ -3,7 +3,7 @@
     "modid": "${modid}",
     "name": "DelClient",
     "description": "QoL for hypixel, use at your own risk!\nThis mod is actually based on some aspects of the game, like Dungeons. (Maybe more in few updates...)",
-    "version": "0.3.2",
+    "version": "0.4",
     "mcversion": "${mcversion}",
     "url": "",
     "updateUrl": "",

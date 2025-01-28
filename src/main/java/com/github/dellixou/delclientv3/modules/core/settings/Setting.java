@@ -39,6 +39,9 @@ public class Setting {
 	public float currentRotationArrow = 0.0f;
 	public float selectedOpacity = 0.0f;
 
+	// Text settings
+	public boolean isFocused = false;
+
 
 	// Constructor for text field setting
 	public Setting(String name, Module parent, String sval, String ids, String category){

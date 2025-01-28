@@ -18,12 +18,6 @@ public class ChatAutoLeapsEvent {
     private final TickAutoLeapsEvent tickDungeonAutoLeapsEvent = new TickAutoLeapsEvent();
     // Auto leap base
     public AutoLeaps autoLeaps;
-    // Goldor messages
-    private static final List<String> goldorMessageNW = new ArrayList<>();
-    static {
-        goldorMessageNW.add("[BOSS] Goldor: The little ants have a brain it seems.");
-        goldorMessageNW.add("[BOSS] Goldor: I will replace that gate with a stronger one!");
-    }
 
     /*
      * Chat Received Event
@@ -31,16 +25,18 @@ public class ChatAutoLeapsEvent {
     @SubscribeEvent
     public void onChatReceived(ClientChatReceivedEvent event) {
         String message = event.message.getUnformattedText();;
+        // START
         if(message.contains("[BOSS] Goldor: Who dares trespass into my domain?")){
             tickDungeonAutoLeapsEvent.autoLeaps = autoLeaps;
             MinecraftForge.EVENT_BUS.register(tickDungeonAutoLeapsEvent);
             DelClient.sendDebug("Goldor started!");
         }
+        // END
         if(message.contains("[BOSS] Goldor: But you have nowhere to hide anymore!")){
             DelClient.sendDebug("Goldor defeated!");
             stopListen();
         }
-
+        // STAGE PHASE
         if(message.contains("(7/7)") || message.contains("(8/8)")){
             DelClient.sendDebug("Goldor stage adding!");
 
@@ -69,6 +65,10 @@ public class ChatAutoLeapsEvent {
                 // Get the part before the '/'
                 String className = parts[0];
                 DungeonUtils.leapToWithClass(DungeonClass.valueOf(className));
+            }
+
+            if(autoLeaps.currentStage == 4){
+                stopListen();
             }
 
             autoLeaps.currentStage += 1;

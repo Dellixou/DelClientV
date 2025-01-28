@@ -10,6 +10,7 @@ import com.github.dellixou.delclientv3.utils.enums.RouteItem;
 import com.github.dellixou.delclientv3.utils.misc.Waypoint;
 import com.github.dellixou.delclientv3.utils.movements.MovementUtils;
 import com.github.dellixou.delclientv3.utils.movements.PlayerMove;
+import com.github.dellixou.delclientv3.utils.pathfinding.newpathfinding.KeybindManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.Entity;
@@ -41,13 +42,14 @@ public class UserRoute extends Module{
      */
     @Override
     public void setup(){
+        DelClient.settingsManager.rSetting(new Setting("Route toggle", this, 3, 1, 10, true, "user_route_toggle", "tolerance"));
+        DelClient.settingsManager.rSetting(new Setting("TP center when start", this, true, "user_route_tp_center", "tolerance"));
         DelClient.settingsManager.rSetting(new Setting("Tolerance", this, 5, 1, 30, true, "user_route_tol", "tolerance"));
         DelClient.settingsManager.rSetting(new Setting("Jump tolerance", this, 5, 1, 30, true, "user_route_jump_tol", "tolerance"));
         DelClient.settingsManager.rSetting(new Setting("Wait tolerance", this, 5, 1, 30, true, "user_route_wait_tol", "tolerance"));
         DelClient.settingsManager.rSetting(new Setting("Look delay", this, 100, 5, 1500, true, "user_route_look_delay", "look"));
         DelClient.settingsManager.rSetting(new Setting("Click tolerance", this, 25, 1, 100, true, "user_route_click_tol", "tolerance"));
         DelClient.settingsManager.rSetting(new Setting("Line width", this, 10, 10, 100, true, "user_route_width", "visual"));
-        DelClient.settingsManager.rSetting(new Setting("Route toggle", this, 3, 1, 10, true, "user_route_toggle", "global"));
         DelClient.settingsManager.rSetting(new Setting("Camera tick", this, 3, 1, 100, true, "user_route_camera_tick", "camera"));
         DelClient.settingsManager.rSetting(new Setting("Rot instant", this, false, "user_route_rot_instant", "camera"));
         DelClient.settingsManager.rSetting(new Setting("Render dist", this, 50, 2, 150, true, "user_route_render_distance", "visual"));
@@ -220,17 +222,20 @@ public class UserRoute extends Module{
                     double height = Math.abs(deltaY);
 
                     if (distance < toggleTolerance && mc.thePlayer.onGround && height < 2 && height > -2) {
-                        mc.thePlayer.setPosition(route.getWaypoints().get(0).getX()+0.5f, mc.thePlayer.posY, route.getWaypoints().get(0).getZ()+0.5f);
-                        new Thread(() -> {
-                            try{
-                                Thread.sleep(100);
-                                for(Waypoint waypoint : route.getWaypoints()){
-                                    waypoint.setDone(false);
-                                }
-                                currentRoute = route;
-                                currentRoute.getWaypoints().get(0).setDone(true);
-                            }catch (Exception ignored) { }
-                        }).start();
+                        currentRoute = route;
+                        if(!currentRoute.getWaypoints().get(0).getDone()){
+                            for(Waypoint waypoint : route.getWaypoints()){
+                                waypoint.setDone(false);
+                            }
+                            if(DelClient.settingsManager.getSettingById("user_route_tp_center").getValBoolean()){
+                                try{
+                                    mc.thePlayer.setPosition(route.getWaypoints().get(0).getX(), mc.thePlayer.posY+0.01f, route.getWaypoints().get(0).getZ());
+                                    MovementUtils.stopMovements();
+                                    mc.thePlayer.setVelocity(0, 0, 0);
+                                }catch (Exception ignored) { }
+                            }
+                            currentRoute.getWaypoints().get(0).setDone(true);
+                        }
                     }
                 }
             }
@@ -371,7 +376,8 @@ public class UserRoute extends Module{
                                     try{
                                         mc.thePlayer.inventory.currentItem = slotItem;
                                         ItemStack itemHand = mc.thePlayer.getHeldItem();
-                                        forceRightClick();
+                                        //forceRightClick();
+                                        doClientRightClick();
                                         //mc.playerController.onPlayerRightClick(mc.thePlayer, mc.theWorld, itemHand, new BlockPos(mc.objectMouseOver.getBlockPos().getX(), mc.objectMouseOver.getBlockPos().getY(), mc.objectMouseOver.getBlockPos().getZ()), mc.objectMouseOver.sideHit, mc.objectMouseOver.hitVec);
                                     }catch (Exception ignored){
                                     }

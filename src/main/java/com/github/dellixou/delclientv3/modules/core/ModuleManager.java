@@ -38,7 +38,7 @@ public class ModuleManager {
         newMod(new ModuleList());
         newMod(new HighlightBlock());
         // FLOOR 7
-        newMod(new AutoPre4());
+        //newMod(new AutoPre4());
         newMod(new AutoLeaps());
         // MACRO
         newMod(new AutoFish());

@@ -149,7 +149,7 @@ public class PlayerMove {
         float pitch = (float) -(Math.atan2(diffY, dist) * 180.0 / Math.PI);
         float factor = 100;
         player.rotationYaw = updateRotation(player.rotationYaw, yaw, factor);
-        player.rotationPitch = updateRotation(player.rotationPitch, pitch, factor);
+        //player.rotationPitch = updateRotation(player.rotationPitch, pitch, factor);
     }
 
     private float updateRotation(float current, float intended, float factor) {

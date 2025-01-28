@@ -3,6 +3,7 @@ package com.github.dellixou.delclientv3.events;
 import com.github.dellixou.delclientv3.DelClient;
 import com.github.dellixou.delclientv3.modules.core.Module;
 import com.github.dellixou.delclientv3.modules.core.ModuleManager;
+import com.github.dellixou.delclientv3.utils.misc.VersionVerifier;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
@@ -39,6 +40,9 @@ public class WorldLoadEvent {
         }
         if(this.firstTimeLoaded && !stopEnableModules){
             stopEnableModules = true;
+            if(!VersionVerifier.isLastVersion()){
+                DelClient.sendWarning("&cYou're not using the latest version for DelClient!");
+            }
             DelClient.fileManager.loadMods();
         }
     }

@@ -11,6 +11,10 @@ public class MathUtils {
         return (int) ((Math.random() * (max - min)) + min);
     }
 
+    public static float getRandomNumberFloat(float min, float max) {
+        return (int) ((Math.random() * (max - min)) + min);
+    }
+
     public static int getRandomNumberPlusOne(int min, int max) {
         Random random = new Random();
         return random.nextInt((max - min) + 1) + min;

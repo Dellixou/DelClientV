@@ -5,6 +5,8 @@ import com.github.dellixou.delclientv3.commands.misc.LookAtCommand;
 import com.github.dellixou.delclientv3.commands.misc.OpenGUICommand;
 import com.github.dellixou.delclientv3.commands.remote.CloseRemoteCommand;
 import com.github.dellixou.delclientv3.commands.remote.OpenRemoteCommand;
+import com.github.dellixou.delclientv3.commands.remote.SetOnwerIDRemoteCommand;
+import com.github.dellixou.delclientv3.commands.remote.SetTokenBotRemoteCommand;
 import com.github.dellixou.delclientv3.commands.userroute.*;
 import com.github.dellixou.delclientv3.gui.oldgui.ClickGUI;
 import com.github.dellixou.delclientv3.gui.oldgui.elements.menu.ElementWriteBox;
@@ -108,6 +110,8 @@ public class DelClient {
         ClientCommandHandler.instance.registerCommand(new LookAtCommand());
         ClientCommandHandler.instance.registerCommand(new OpenRemoteCommand());
         ClientCommandHandler.instance.registerCommand(new CloseRemoteCommand());
+        ClientCommandHandler.instance.registerCommand(new SetTokenBotRemoteCommand());
+        ClientCommandHandler.instance.registerCommand(new SetOnwerIDRemoteCommand());
         // Start client
         startClient();
     }

@@ -35,6 +35,7 @@ public class OpenLeapMenuEvent {
                                     ItemStack itemStack = lowerInventory.getStackInSlot(i);
                                     if (itemStack != null && itemStack.getDisplayName().contains(playerToLeap)) {
                                         int windowId = container.windowId;
+                                        Thread.sleep(45);
                                         Minecraft.getMinecraft().playerController.windowClick(
                                                 windowId, // The window ID of the container
                                                 i,       // The slot ID to click on

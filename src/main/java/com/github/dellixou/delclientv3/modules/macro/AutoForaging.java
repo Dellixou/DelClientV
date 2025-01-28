@@ -9,22 +9,33 @@ import com.github.dellixou.delclientv3.utils.enums.SkyblockZone;
 import com.github.dellixou.delclientv3.utils.movements.MovementUtils;
 import com.github.dellixou.delclientv3.utils.movements.RotationUtils;
 import com.github.dellixou.delclientv3.utils.pathfinding.newpathfinding.*;
+import com.github.dellixou.delclientv3.utils.pathfinding.newpathfinding.enums.BlockState;
 import com.github.dellixou.delclientv3.utils.pathfinding.newpathfinding.enums.NodePickStyle;
 import com.github.dellixou.delclientv3.utils.pathfinding.oldpathfinding.PathFinder;
 import com.github.dellixou.delclientv3.utils.pathfinding.macros.ForagingUtils;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockLog;
 import net.minecraft.block.BlockPlanks;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.util.BlockPos;
+import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import org.lwjgl.Sys;
 import org.lwjgl.input.Keyboard;
+import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.Stack;
 
 public class AutoForaging extends Module {
@@ -52,9 +63,15 @@ public class AutoForaging extends Module {
     private int pitchOffset = 0;
     private int tickRotRandom = 6;
 
+    private RotationUtils.Rotation savedRotation = null;
+    private boolean isNewCycle = true;
+
     private int currentStuck = 0;
 
     private Stack<Node> currentPath;
+
+    private Vec3 rayTraceStart;
+    private Vec3 rayTraceEnd;
 
     /*
      * Sets up initial settings for the Auto Foraging module.
@@ -64,6 +81,12 @@ public class AutoForaging extends Module {
         DelClient.settingsManager.rSetting(new Setting("Minimum log per tree", this, 7, 1, 30, true, "auto_fora_min_log", "pathfinding"));
         DelClient.settingsManager.rSetting(new Setting("Distance reached", this, 3.5f, 1f, 5f, false, "auto_fora_dist_reach", "pathfinding"));
         DelClient.settingsManager.rSetting(new Setting("Tolerance", this, 2, 0.1, 3, false, "auto_fora_tol", "pathfinding"));
+
+        ArrayList<String> logToReach = new ArrayList<String>();
+        for (BlockPlanks.EnumType type : BlockPlanks.EnumType.values()){
+            logToReach.add(type.getName());
+        }
+        DelClient.settingsManager.rSetting(new Setting("Log to reach", this, "OAK", logToReach, "auto_fora_log", "pathfinding"));
 
         DelClient.settingsManager.rSetting(new Setting("Delay (sec)", this, 1, 0.1, 5, false, "auto_fora_delay", "movements"));
         DelClient.settingsManager.rSetting(new Setting("Look delay (sec)", this, 0.8, 0.1, 5, false, "auto_fora_look_delay", "movements"));
@@ -85,6 +108,7 @@ public class AutoForaging extends Module {
         MovementUtils.stopMovements();
         MovementUtils.playerAttack(false);
         inPathFinding = false;
+        isNewCycle = true;
         super.onEnable();
     }
 
@@ -94,6 +118,7 @@ public class AutoForaging extends Module {
     public void onDisable(){
         MinecraftForge.EVENT_BUS.unregister(this);
         inPathFinding = false;
+        isNewCycle = true;
         MovementUtils.playerAttack(false);
         MovementUtils.stopMovements();
         currentPath = null;
@@ -104,14 +129,10 @@ public class AutoForaging extends Module {
     /*
      * Called periodically to update the module's state.
      */
-    // TODO : si quand arrive ne regarde pas un tronc alors bouger un peu
-    // TODO : humanizer le comportement quand proche de la cible desuite pitch 0 to 90 to 0 to 90...
-    // TODO : faire relacher l'attack avec un peu de random et tenir plus longtemps
-    // TODO : ne pas enlever le sneak de suite
     @Override
     public void onUpdate() {
 
-        if (this.isToggled() && mc.thePlayer != null && SkyblockUtils.getCurrentZone().equals(SkyblockZone.HUB)) {
+        if (this.isToggled() && mc.thePlayer != null && (SkyblockUtils.getCurrentZone().equals(SkyblockZone.HUB) || SkyblockUtils.getCurrentZone().equals(SkyblockZone.PARK))){
 
             float reach = (float) DelClient.settingsManager.getSettingById("auto_fora_dist_reach").getValDouble();
             float stuckDelay = (float) DelClient.settingsManager.getSettingById("auto_fora_stuck_delay").getValDouble();
@@ -125,8 +146,8 @@ public class AutoForaging extends Module {
                         float lookDelay = (float) DelClient.settingsManager.getSettingById("auto_fora_look_delay").getValDouble();
                         int lookAcceptance = (int) DelClient.settingsManager.getSettingById("auto_fora_look_acceptance").getValDouble();
 
-
-                        nearestTree = ForagingUtils.findLargeAccessibleTree(range, minLog+2, BlockPlanks.EnumType.OAK, minLog);
+                        BlockPlanks.EnumType logType = BlockPlanks.EnumType.valueOf(DelClient.settingsManager.getSettingById("auto_fora_log").getValString().toUpperCase());
+                        nearestTree = ForagingUtils.findLargeAccessibleTree(range, 3, logType, minLog);
 
                         if(nearestTree != null){
 
@@ -147,7 +168,7 @@ public class AutoForaging extends Module {
                                 }
 
                                 currentPath = path.toStack();
-                                executer.begin(PathExecuter.cutPath(path.toStack(), world), tol, reach, randomTickRotate, goal, (int) offsetLook, nearestTree);
+                                executer.begin(PathExecuter.cutPath(path.toStack(), world), tol, reach, randomTickRotate, goal, (int) offsetLook, nearestTree, null);
 
                                 inPathFinding = true;
                                 currentTickToWaitForEachScan = 0;
@@ -163,20 +184,49 @@ public class AutoForaging extends Module {
             }
             else{
                 if(!executer.isOnline){
-                    RotationUtils.smoothLook(RotationUtils.getRotationToBlock(nearestTree), tickRotRandom, null);
+
+                    RotationUtils.Rotation rot = RotationUtils.getRotationToBlock(nearestTree);
+                    rot.yaw += 3;
+                    rot.pitch += 2;
+
+                    RotationUtils.smoothLook(rot, tickRotRandom, null);
+
                     if(currentTickToWaitForEachScan >= (int) (DelClient.settingsManager.getSettingById("auto_fora_delay").getValDouble()*20)){
                         MovementUtils.playerAttack(true);
+
+                        Vec3 lookVec = mc.thePlayer.getLook(1.0F);
+                        Vec3 playerPos = mc.thePlayer.getPositionEyes(1.0F);
+                        double reachDistance = mc.playerController.getBlockReachDistance();
+                        Vec3 rayTraceEnd = playerPos.addVector(lookVec.xCoord * reachDistance, lookVec.yCoord * reachDistance, lookVec.zCoord * reachDistance);
+
+                        MovingObjectPosition movingObjectPosition = mc.theWorld.rayTraceBlocks(playerPos, rayTraceEnd, false, true, true);
+
+                        this.rayTraceStart = playerPos;
+                        this.rayTraceEnd = movingObjectPosition != null ? movingObjectPosition.hitVec : rayTraceEnd;
+
+                        if (movingObjectPosition != null && movingObjectPosition.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK) {
+                            IBlockState blockState = mc.theWorld.getBlockState(movingObjectPosition.getBlockPos());
+                            if (blockState != null) {
+                                Block block = blockState.getBlock();
+                                if (!(block instanceof BlockLog)) {
+                                    RotationUtils.smoothLook(RotationUtils.getRotationToBlock(new BlockPos(nearestTree.getX(), nearestTree.getY() + 1, nearestTree.getZ())), tickRotRandom, null);
+                                }
+                            }
+                        }
+
                     }else{
                         currentTickToWaitForEachScan++;
                     }
+
                     if(mc.theWorld.getBlockState(nearestTree).getBlock().getMaterial() == Material.air){
                         inPathFinding = false;
+                        isNewCycle = true;
                         RotationUtils.smoothLook(new RotationUtils.Rotation(mc.thePlayer.rotationPitch+pitchOffset, mc.thePlayer.rotationYaw+yawOffset), tickRotRandom*10, null);
                         new Thread(() -> {
                             try{
-                                Thread.sleep(3);
+                                Thread.sleep(100);
                                 MovementUtils.playerAttack(false);
-                                Thread.sleep(15);
+                                Thread.sleep(150);
                                 MovementUtils.stopSneaking();
                             }catch (Exception ignored) { }
                         }).start();
@@ -188,7 +238,11 @@ public class AutoForaging extends Module {
                         MovementUtils.sneak();
                     }
 
-                    if(mc.thePlayer.isCollidedHorizontally){
+                    if(mc.thePlayer.isInWater()){
+                        KeybindManager.setKeyBindState(mc.gameSettings.keyBindJump, true);
+                    }
+
+                    if(mc.thePlayer.isCollidedHorizontally && !mc.thePlayer.isInWater()){
                         if(currentStuck >= stuckDelay*20){
                             MovementUtils.jump();
                             currentStuck = 0;
@@ -221,6 +275,8 @@ public class AutoForaging extends Module {
                 Color c = DelClient.settingsManager.getSettingById("auto_fora_tracer_rainbow").getValBoolean() ? ColorUtils.rainbowEffect(200000000L, 1.0f) : new Color(255, 255, 255, 255);
                 RenderUtils.tracerLineToBlock(nearestTree, event.partialTicks, 2, c);
             }
+
+            onRender3D(event.partialTicks);
         }
 
         if(DelClient.settingsManager.getSettingById("auto_fora_draw_pathfinding").getValBoolean()){
@@ -233,4 +289,43 @@ public class AutoForaging extends Module {
             }
         }
     }
+
+    public void onRender3D(float partialTicks) {
+        if (rayTraceStart != null && rayTraceEnd != null) {
+            renderRayTrace(rayTraceStart, rayTraceEnd, partialTicks);
+        }
+    }
+
+    private void renderRayTrace(Vec3 start, Vec3 end, float partialTicks) {
+        double renderPosX = mc.getRenderManager().viewerPosX;
+        double renderPosY = mc.getRenderManager().viewerPosY;
+        double renderPosZ = mc.getRenderManager().viewerPosZ;
+
+        GlStateManager.pushMatrix();
+        GlStateManager.enableBlend();
+        GlStateManager.disableTexture2D();
+        GlStateManager.disableLighting();
+        GlStateManager.depthMask(false);
+        GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+
+        GL11.glLineWidth(2.0F);
+
+        Tessellator tessellator = Tessellator.getInstance();
+        WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+        worldrenderer.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
+
+        worldrenderer.pos(start.xCoord - renderPosX, start.yCoord - renderPosY, start.zCoord - renderPosZ)
+                .color(1.0F, 0.0F, 0.0F, 1.0F).endVertex();
+        worldrenderer.pos(end.xCoord - renderPosX, end.yCoord - renderPosY, end.zCoord - renderPosZ)
+                .color(1.0F, 0.0F, 0.0F, 1.0F).endVertex();
+
+        tessellator.draw();
+
+        GlStateManager.depthMask(true);
+        GlStateManager.enableTexture2D();
+        GlStateManager.enableLighting();
+        GlStateManager.disableBlend();
+        GlStateManager.popMatrix();
+    }
+
 }
